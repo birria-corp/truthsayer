@@ -1,0 +1,25 @@
+{
+  "name": "The Truthsayer",
+  "short_name": "Truthsayer",
+  "description": "Two lies. One truth. Find it. — A weekly segment on the Escape Hatch podcast.",
+  "start_url": "/truthsayer/",
+  "scope": "/truthsayer/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
