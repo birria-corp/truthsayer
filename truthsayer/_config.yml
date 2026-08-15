@@ -1,0 +1,16 @@
+title: The Truthsayer
+description: A weekly trivia segment on the Escape Hatch podcast. Two lies. One truth. Find it.
+baseurl: "/truthsayer"
+url: "https://spencer-thompson-2-vu.github.io"
+theme: minima
+author: birria
+show_excerpts: true
+
+markdown: kramdown
+highlighter: rouge
+
+exclude:
+  - README.md
+  - CONTEXT.md
+  - LOG.md
+  - segments-in-progress/
