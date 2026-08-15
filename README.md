@@ -2,7 +2,7 @@
 
 A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). Each week, two plausible fictions and one true fact — the audience finds the truth.
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Segment count:** 161 and counting  
 **Podcast:** Escape Hatch  
 **Host:** birria  
@@ -10,42 +10,63 @@ A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). E
 
 ---
 
-## What's New in v1.1
+## What's New in v1.2
+
+- UI scaled up 20% across all elements
+- JSON import — paste a segment JSON block to populate the form automatically
+- Review and edit all fields before publishing
+- Word count indicator on full text field
+
+## What's in v1.1
 
 - Full PWA — installable on mobile, works offline
-- Firebase-backed segment management app
+- Firebase-backed segment management
 - Dashboard with stats and recent segments
-- New segment form with entry builder and word count
+- New segment form with entry builder
 - Archive with search and filter
 - Google auth — birria only can write; all can read
 
 ---
 
-## Format
+## Segment JSON Format
+
+When finishing a segment in Claude, request a JSON block in this format:
+
+```json
+{
+  "tsNumber": 162,
+  "episodeNumber": 320,
+  "airDate": "2026-08-22",
+  "film": "Film Title (Year)",
+  "topic": "Topic / angle",
+  "variant": "standard",
+  "entries": [
+    { "text": "Entry one text", "isTrue": false },
+    { "text": "Entry two text — the true one", "isTrue": true },
+    { "text": "Entry three text", "isTrue": false }
+  ],
+  "trueStory": "One line summary of the true answer",
+  "closer": "The closing line before Here ends the Truthsayer",
+  "fullText": "Complete final segment text here"
+}
+```
+
+Paste into New Segment → Import box → click Import → review → Publish.
+
+---
+
+## Segment Format
 
 1. Short intro tying topic to the film
 2. Setup: two false, one true
 3. **"Time for the Truthsayer."**
-4. Numbered entries (#1, #2, #3 — or more for list variants)
+4. Numbered entries
 5. **"Alright — which of these [X] stories is true?"**
 6. Reveal + brief explanation (2–4 lines max)
-7. Thematic closer — film dialogue, quote, or dry callback
+7. Thematic closer
 8. **"Here ends the Truthsayer."**
 
 **Length:** 90–120 seconds / 225–300 words (hard limit)
-
----
-
-## Structural Variants
-
-| Variant | Description | Example |
-|---------|-------------|---------|
-| Standard | 3 entries, 2 false 1 true | Almost Famous (Lester Bangs) |
-| List — find the false | 5+ entries, find the one she wasn't in | ET (Dee Wallace horror films) |
-| List — find the true | 5+ entries, find who didn't work with X | Adaptation (Spike Jonze) |
-| All true | All 3 turn out to be true | Pulp Fiction, Casablanca |
-| Count format | Guess a specific number | Goonies |
-| Trivia race | Real things competing | Batman & Robin (Coolio ratings) |
 
 ---
 
@@ -56,44 +77,39 @@ truthsayer/
 ├── index.html              — PWA app (all CSS + JS inline)
 ├── sw.js                   — Service worker
 ├── manifest.json           — PWA manifest
-├── version.json            — { "version": "1.1" }
-├── icon.png                — App icon (Truthsayer logo)
+├── version.json            — { "version": "1.2" }
+├── icon.png                — App icon
 ├── README.md               — This file
 ├── CONTEXT.md              — Claude session resumption file
 ├── LOG.md                  — Running segment table
 ├── _config.yml             — Jekyll config
-├── archive/                — One .md file per completed segment
-└── segments-in-progress/   — Drafts and upcoming segments
+├── archive/                — One .md per completed segment
+└── segments-in-progress/   — Drafts
 ```
 
 ---
 
-## Update Workflow
+## Version Bump Checklist
 
-### Publishing a new segment
-1. Write and finalize segment in the Claude Truthsayer project
-2. Open the app at `https://birria-corp.github.io/truthsayer/`
-3. Sign in with Google
-4. Go to New Segment — fill in all fields, paste final text
-5. Hit Publish — segment saves to Firestore instantly
-6. Also add to `archive/TS-[number]-[slug].md` and `LOG.md` in this repo
+When releasing a new version, update all three locations simultaneously:
+- `APP_VERSION` in `index.html`
+- `version.json`
+- `CACHE_VERSION` in `sw.js`
 
-### Deploying a new app version
-1. GitHub Desktop → Pull origin
-2. Copy updated files into local repo folder
-3. Bump version in: `index.html` (APP_VERSION), `version.json`, `sw.js` (CACHE_VERSION)
-4. Commit: `vX.X — [what changed]`
-5. Push origin
+## Deployment
+
+GitHub Desktop → Pull origin → copy files → Commit → Push origin  
+Pages auto-deploys from `main` branch root.
 
 ---
 
 ## Firebase
 
-- **Project:** zeptrack-f8720
+- **Project:** truthsayer-4c3ee
 - **Firestore collection:** `segments`
-- **Auth:** Google sign-in, birria only
-- **Read access:** Public (no auth required)
-- **Hosting:** GitHub Pages (not Firebase Hosting)
+- **Auth:** Google sign-in, birria only writes
+- **Read access:** Public
+- **Hosting:** GitHub Pages
 
 ---
 
@@ -101,5 +117,6 @@ truthsayer/
 
 | Version | Changes |
 |---------|---------|
+| v1.2 | 20% UI scale increase, JSON import for segment form |
 | v1.1 | PWA app with Firebase, segment management, archive, dashboard |
 | v1.0 | Static GitHub Pages archive site |
