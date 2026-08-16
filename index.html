@@ -575,6 +575,114 @@
     #app-main { padding: 1.25rem 1rem; }
     .card-topic, .card-truth { padding-left: 0; margin-top: 0.3rem; }
   }
+
+  /* ── BULK IMPORT ── */
+  .bulk-import-section {
+    margin-bottom: 1.75rem;
+  }
+
+  .bulk-toggle {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: var(--font-body);
+    padding: 0.5rem 1rem;
+    width: 100%;
+    text-align: left;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .bulk-toggle:hover { color: var(--gold); border-color: var(--gold-dim); }
+  .bulk-toggle.open { color: var(--gold); border-color: var(--gold-dim); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+  .bulk-body {
+    border: 1px solid var(--gold-dim);
+    border-top: none;
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+    padding: 1.25rem;
+    background: var(--gold-bg);
+  }
+
+  .bulk-body.hidden { display: none; }
+
+  .bulk-hint {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--bg);
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--gold);
+    background: var(--surface);
+  }
+
+  .drop-zone-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+  .drop-zone-label { font-size: 1rem; color: var(--text); margin-bottom: 0.25rem; }
+  .drop-zone-sub { font-size: 0.8rem; color: var(--muted); }
+
+  .bulk-file-name {
+    font-size: 0.82rem;
+    color: var(--gold);
+    font-family: var(--font-mono);
+    margin-top: 0.625rem;
+    min-height: 1.2rem;
+  }
+
+  .bulk-progress-wrap { margin-top: 0.875rem; }
+  .bulk-progress-wrap.hidden { display: none; }
+
+  .bulk-progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+  }
+
+  .bulk-progress-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  .bulk-progress-text { font-size: 0.78rem; color: var(--muted); }
+
+  #bulk-log {
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 0.875rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .blog-line { padding: 0.2rem 0; border-bottom: 1px solid var(--border); }
+  .blog-ok { color: var(--success); }
+  .blog-err { color: var(--danger); }
+  .blog-info { color: var(--muted); }
+  .bulk-summary { background: #0d2010; border: 1px solid #1a4025; border-radius: var(--radius); padding: 0.75rem 1rem; font-size: 0.85rem; color: var(--success); margin-top: 0.75rem; }
+
+  .bulk-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.875rem;
+  }
+
 </style>
 </head>
 <body>
@@ -583,7 +691,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.2</span>
+    <span class="header-version">v1.3</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -630,7 +738,7 @@
       <button class="btn btn-primary btn-sm" onclick="handleAuthClick()">Sign in with Google</button>
     </div>
 
-    <!-- JSON IMPORT -->
+    <!-- JSON IMPORT (single segment) -->
     <div class="import-box">
       <p class="import-box-title">Import from JSON</p>
       <div class="import-row">
@@ -641,6 +749,36 @@
         </div>
       </div>
       <div id="import-feedback"></div>
+    </div>
+
+    <!-- BULK IMPORT (collapsible) -->
+    <div class="bulk-import-section" id="bulk-import-section">
+      <button class="bulk-toggle" onclick="toggleBulk()" id="bulk-toggle-btn">
+        ▶ Bulk Import History
+      </button>
+      <div class="bulk-body hidden" id="bulk-body">
+        <p class="bulk-hint">Drag a segments batch JSON onto the drop zone, or click to browse. Writes all segments to Firestore with a progress log.</p>
+        <div class="drop-zone" id="drop-zone"
+          ondragover="onDragOver(event)"
+          ondragleave="onDragLeave(event)"
+          ondrop="onDrop(event)"
+          onclick="document.getElementById('bulk-file-input').click()">
+          <div class="drop-zone-icon">⬇</div>
+          <div class="drop-zone-label">Drop JSON batch file here</div>
+          <div class="drop-zone-sub">or click to browse</div>
+          <input type="file" id="bulk-file-input" accept=".json" style="display:none" onchange="onFileSelected(event)">
+        </div>
+        <div id="bulk-file-name" class="bulk-file-name"></div>
+        <div class="bulk-progress-wrap hidden" id="bulk-progress-wrap">
+          <div class="bulk-progress-bar"><div class="bulk-progress-fill" id="bulk-progress-fill"></div></div>
+          <div class="bulk-progress-text" id="bulk-progress-text"></div>
+        </div>
+        <div id="bulk-log"></div>
+        <div class="bulk-actions">
+          <button class="btn btn-primary btn-sm" id="bulk-import-btn" onclick="runBulkImport()" disabled>Import Batch</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearBulk()">Clear</button>
+        </div>
+      </div>
     </div>
 
     <!-- FORM -->
@@ -820,7 +958,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1143,6 +1281,135 @@ async function deleteSegment(id) {
 }
 
 function loadSegments() { if (window._loadSegments) window._loadSegments(); }
+
+// ── BULK IMPORT ──
+let bulkSegments = null;
+
+function toggleBulk() {
+  const body = document.getElementById('bulk-body');
+  const btn = document.getElementById('bulk-toggle-btn');
+  const isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !isHidden);
+  btn.classList.toggle('open', isHidden);
+  btn.textContent = (isHidden ? '▼' : '▶') + ' Bulk Import History';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadBulkFile(file);
+}
+
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if (file) loadBulkFile(file);
+}
+
+function loadBulkFile(file) {
+  if (!file.name.endsWith('.json')) {
+    bulkLog('Not a JSON file — select a .json batch file.', 'err');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      bulkSegments = JSON.parse(e.target.result);
+      if (!Array.isArray(bulkSegments)) throw new Error('JSON must be an array.');
+      document.getElementById('bulk-file-name').textContent = file.name + ' — ' + bulkSegments.length + ' segments ready';
+      document.getElementById('bulk-import-btn').disabled = false;
+      bulkLog('Loaded ' + bulkSegments.length + ' segments from ' + file.name, 'info');
+    } catch(err) {
+      bulkLog('Failed to parse: ' + err.message, 'err');
+      bulkSegments = null;
+      document.getElementById('bulk-import-btn').disabled = true;
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function runBulkImport() {
+  if (!window._currentUser) { toast('Sign in first'); return; }
+  if (!bulkSegments || !bulkSegments.length) { toast('Load a JSON file first'); return; }
+
+  const btn = document.getElementById('bulk-import-btn');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+
+  document.getElementById('bulk-progress-wrap').classList.remove('hidden');
+  document.getElementById('bulk-log').innerHTML = '';
+
+  let success = 0, failed = 0;
+
+  for (let i = 0; i < bulkSegments.length; i++) {
+    const seg = bulkSegments[i];
+    const label = (seg.film || 'Segment ' + (i+1));
+    try {
+      await window._addDoc(
+        window._collection(window._db, 'segments'),
+        {
+          ...seg,
+          authorUid: window._currentUser.uid,
+          authorEmail: window._currentUser.email,
+          createdAt: window._serverTimestamp(),
+          updatedAt: window._serverTimestamp()
+        }
+      );
+      success++;
+      bulkLog('✓ [' + (i+1) + '/' + bulkSegments.length + '] ' + label, 'ok');
+    } catch(e) {
+      failed++;
+      bulkLog('✗ [' + (i+1) + '/' + bulkSegments.length + '] ' + label + ' — ' + e.message, 'err');
+    }
+
+    const pct = Math.round(((i+1) / bulkSegments.length) * 100);
+    document.getElementById('bulk-progress-fill').style.width = pct + '%';
+    document.getElementById('bulk-progress-text').textContent = (i+1) + ' of ' + bulkSegments.length + ' processed';
+
+    await new Promise(r => setTimeout(r, 250));
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Import Batch';
+
+  const summary = document.createElement('div');
+  summary.className = 'bulk-summary';
+  summary.textContent = 'Done — ' + success + ' imported, ' + failed + ' failed.';
+  document.getElementById('bulk-log').prepend(summary);
+
+  await window._loadSegments();
+  toast('Batch import complete — ' + success + ' segments added');
+}
+
+function bulkLog(msg, type) {
+  const log = document.getElementById('bulk-log');
+  const div = document.createElement('div');
+  div.className = 'blog-line blog-' + type;
+  div.textContent = msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearBulk() {
+  bulkSegments = null;
+  document.getElementById('bulk-file-name').textContent = '';
+  document.getElementById('bulk-log').innerHTML = '';
+  document.getElementById('bulk-progress-fill').style.width = '0%';
+  document.getElementById('bulk-progress-text').textContent = '';
+  document.getElementById('bulk-progress-wrap').classList.add('hidden');
+  document.getElementById('bulk-import-btn').disabled = true;
+  document.getElementById('bulk-file-input').value = '';
+}
+
 
 // ── UTILS ──
 function toast(msg, duration = 2800) {
