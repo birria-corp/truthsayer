@@ -1077,6 +1077,11 @@
     color: var(--gold);
   }
 
+
+  /* ── ADMIN-ONLY NAV ── */
+  .nav-tab.admin-only { display: none; }
+  .nav-tab.admin-only.visible { display: inline-block; }
+
 </style>
 </head>
 <body>
@@ -1085,7 +1090,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v2.3</span>
+    <span class="header-version">v2.4</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -1095,7 +1100,7 @@
 
 <nav id="app-nav">
   <button class="nav-tab active" onclick="showView('dashboard')">The Library</button>
-  <button class="nav-tab" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
+  <button class="nav-tab admin-only" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
 </nav>
 
 <main id="app-main">
@@ -1462,7 +1467,8 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.4';
+  const ADMIN_UIDS = ['7svXyOVugrTOLgK33R82eHqKp6f2'];
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1484,7 +1490,7 @@ function updateAuthUI(user) {
 }
 
 function handleAuthClick() {
-  if (window._currentUser) {
+  if (isAdmin()) {
     window._signOut(window._auth).then(() => toast('Signed out'));
   } else {
     window._signInWithPopup(window._auth, window._provider)
@@ -1501,6 +1507,7 @@ function handleAuthClick() {
 
 // ── NAV ──
 function showView(id) {
+  if (id === 'new-segment' && !isAdmin()) return;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + id).classList.add('active');
@@ -1752,6 +1759,10 @@ function renderDashboard() {
 // ── ARCHIVE ──
 function renderArchive() { filterArchive(); }
 
+function isAdmin() {
+  return !!(window._currentUser && ADMIN_UIDS.includes(window._currentUser.uid));
+}
+
 function isEffectivelyPublished(s) {
   // Scheduled segments with a past airDate are treated as published for public view
   if (s.status === 'published') return true;
@@ -1764,7 +1775,7 @@ function isEffectivelyPublished(s) {
 function filterArchive() {
   const q = (document.getElementById('archive-search')?.value || '').toLowerCase();
   const f = document.getElementById('archive-filter')?.value || 'all';
-  const isAdmin = !!window._currentUser;
+  const isAdmin = isAdmin();
   const segments = window._allSegments || [];
 
   const base = segments.filter(s => {
@@ -1857,7 +1868,7 @@ function openModal(id) {
 
   const actions = document.getElementById('modal-actions');
   actions.innerHTML = '';
-  if (window._currentUser) {
+  if (isAdmin()) {
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-secondary btn-sm';
     editBtn.textContent = 'Edit';
