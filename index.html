@@ -746,7 +746,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.5</span>
+    <span class="header-version">v1.6</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -954,12 +954,12 @@
     <button class="modal-close" onclick="closeModalDirect()">✕</button>
     <div class="modal-film" id="modal-film"></div>
     <div class="modal-meta" id="modal-meta"></div>
+    <p class="modal-section-label">Full segment</p>
+    <div class="modal-fulltext" id="modal-fulltext"></div>
     <p class="modal-section-label">Entries</p>
     <div id="modal-entries"></div>
     <p class="modal-section-label">True story</p>
     <div style="font-size:1rem;color:var(--gold);margin-bottom:0.25rem" id="modal-truth"></div>
-    <p class="modal-section-label">Full segment</p>
-    <div class="modal-fulltext" id="modal-fulltext"></div>
     <div class="modal-actions" id="modal-actions"></div>
   </div>
 </div>
@@ -1027,7 +1027,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.6';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1348,7 +1348,6 @@ function filterArchive() {
         </div>
       </div>
       ${s.topic ? `<div class="card-topic">${esc(s.topic)}</div>` : ''}
-      ${s.trueStory ? `<div class="card-truth">${esc(s.trueStory)}</div>` : ''}
     </div>
   `).join('');
 }
