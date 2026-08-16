@@ -1775,12 +1775,12 @@ function isEffectivelyPublished(s) {
 function filterArchive() {
   const q = (document.getElementById('archive-search')?.value || '').toLowerCase();
   const f = document.getElementById('archive-filter')?.value || 'all';
-  const isAdmin = isAdmin();
+  const userIsAdmin = isAdmin();
   const segments = window._allSegments || [];
 
   const base = segments.filter(s => {
     // Visibility: admins see all; public sees published + effectively-published scheduled
-    if (!isAdmin) {
+    if (!userIsAdmin) {
       if (s.status === 'draft') return false;
       if (s.status === 'scheduled' && !isEffectivelyPublished(s)) return true; // show as coming soon
     }
@@ -1797,7 +1797,7 @@ function filterArchive() {
     return;
   }
   list.innerHTML = filtered.map(s => {
-    const comingSoon = !isAdmin && s.status === 'scheduled' && !isEffectivelyPublished(s);
+    const comingSoon = !userIsAdmin && s.status === 'scheduled' && !isEffectivelyPublished(s);
     if (comingSoon) {
       return `
         <div class="segment-card card-coming-soon">
