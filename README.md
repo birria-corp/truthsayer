@@ -2,47 +2,51 @@
 
 A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). Each week, two plausible fictions and one true fact — the audience finds the truth.
 
-**Version:** 1.2  
-**Segment count:** 161 and counting  
-**Podcast:** Escape Hatch  
-**Host:** birria  
+**Version:** 2.0
 **Live:** https://birria-corp.github.io/truthsayer/
 
 ---
 
-## What's New in v1.2
+## What's New in v2.0
 
-- UI scaled up 20% across all elements
-- JSON import — paste a segment JSON block to populate the form automatically
-- Review and edit all fields before publishing
-- Word count indicator on full text field
+- Dashboard and Archive consolidated into a single **Library** tab
+- Library hero row: logo, Frank Herbert quote, segment count — all in one borderless row
+- Segment cards redesigned: Ep# stacked above TS# on left, film + topic inline in center, Rec/Air dates + status on right
+- Single sort + search controls the full library view
+- Archive tab removed
 
-## What's in v1.1
+## Version History
 
-- Full PWA — installable on mobile, works offline
-- Firebase-backed segment management
-- Dashboard with stats and recent segments
-- New segment form with entry builder
-- Archive with search and filter
-- Google auth — birria only can write; all can read
+| Version | Changes |
+|---------|---------|
+| v2.0 | Library tab replaces Dashboard + Archive. Redesigned segment cards. |
+| v1.9 | Bulk Import/Batch Edit toggle in one collapsible section |
+| v1.8 | Modal edit mode, Segment Builder rename, auto-increment episode number, segmentId |
+| v1.7 | Dashboard logo artwork, Frank Herbert quote |
+| v1.6 | Archive hides true story answers, modal shows full text first |
+| v1.5 | Sort controls and dual date display on all cards |
+| v1.4 | Duplicate check and auto-clear on bulk import |
+| v1.3 | Drag-and-drop bulk import inside Segment Builder |
+| v1.2 | 20% UI scale increase, JSON import for segment form |
+| v1.1 | PWA app with Firebase segment management, dashboard, archive |
+| v1.0 | Static GitHub Pages archive site |
 
 ---
 
 ## Segment JSON Format
 
-When finishing a segment in Claude, request a JSON block in this format:
-
 ```json
 {
   "tsNumber": 162,
   "episodeNumber": 320,
-  "airDate": "2026-08-22",
+  "recordDate": "2026-08-29",
+  "airDate": "2026-09-03",
   "film": "Film Title (Year)",
   "topic": "Topic / angle",
   "variant": "standard",
   "entries": [
     { "text": "Entry one text", "isTrue": false },
-    { "text": "Entry two text — the true one", "isTrue": true },
+    { "text": "Entry two — the true one", "isTrue": true },
     { "text": "Entry three text", "isTrue": false }
   ],
   "trueStory": "One line summary of the true answer",
@@ -50,8 +54,6 @@ When finishing a segment in Claude, request a JSON block in this format:
   "fullText": "Complete final segment text here"
 }
 ```
-
-Paste into New Segment → Import box → click Import → review → Publish.
 
 ---
 
@@ -62,7 +64,7 @@ Paste into New Segment → Import box → click Import → review → Publish.
 3. **"Time for the Truthsayer."**
 4. Numbered entries
 5. **"Alright — which of these [X] stories is true?"**
-6. Reveal + brief explanation (2–4 lines max)
+6. Reveal + brief explanation
 7. Thematic closer
 8. **"Here ends the Truthsayer."**
 
@@ -74,49 +76,30 @@ Paste into New Segment → Import box → click Import → review → Publish.
 
 ```
 truthsayer/
-├── index.html              — PWA app (all CSS + JS inline)
-├── sw.js                   — Service worker
-├── manifest.json           — PWA manifest
-├── version.json            — { "version": "1.2" }
-├── icon.png                — App icon
-├── README.md               — This file
-├── CONTEXT.md              — Claude session resumption file
-├── LOG.md                  — Running segment table
-├── _config.yml             — Jekyll config
-├── archive/                — One .md per completed segment
-└── segments-in-progress/   — Drafts
+├── index.html          — PWA app (all CSS + JS inline)
+├── sw.js               — Service worker
+├── manifest.json       — PWA manifest
+├── version.json        — { "version": "2.0" }
+├── icon.png            — App icon / tab favicon
+├── logo-dashboard.jpg  — Library hero image
+├── README.md
+├── CONTEXT.md
+├── LOG.md
+├── _config.yml
+├── archive/
+└── segments-in-progress/
 ```
-
----
-
-## Version Bump Checklist
-
-When releasing a new version, update all three locations simultaneously:
-- `APP_VERSION` in `index.html`
-- `version.json`
-- `CACHE_VERSION` in `sw.js`
-
-## Deployment
-
-GitHub Desktop → Pull origin → copy files → Commit → Push origin  
-Pages auto-deploys from `main` branch root.
 
 ---
 
 ## Firebase
 
 - **Project:** truthsayer-4c3ee
-- **Firestore collection:** `segments`
+- **Firestore collection:** segments
 - **Auth:** Google sign-in, birria only writes
-- **Read access:** Public
-- **Hosting:** GitHub Pages
+- **Read:** Public
+- **Hosting:** GitHub Pages (birria-corp.github.io/truthsayer)
 
----
+## Deployment
 
-## Version History
-
-| Version | Changes |
-|---------|---------|
-| v1.2 | 20% UI scale increase, JSON import for segment form |
-| v1.1 | PWA app with Firebase, segment management, archive, dashboard |
-| v1.0 | Static GitHub Pages archive site |
+GitHub Desktop → Pull origin → copy files → Commit → Push origin

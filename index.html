@@ -878,6 +878,162 @@
   .bulk-mode-btn.active { background: var(--gold-bg); color: var(--gold); font-weight: 600; }
   .bulk-mode-btn:hover:not(.active) { color: var(--text); }
 
+
+  /* ── LIBRARY HERO ── */
+  .library-hero {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    min-height: 160px;
+  }
+
+  .library-logo-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 1.25rem;
+  }
+
+  .library-logo {
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    border-radius: 6px;
+  }
+
+  .library-quote-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 1.5rem;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  .library-quote {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.7;
+    margin-bottom: 0.5rem;
+  }
+
+  .library-attr {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    color: var(--dim);
+  }
+
+  .library-count-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-left: 1.25rem;
+    min-width: 100px;
+  }
+
+  .library-count-num {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .library-count-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+  }
+
+  .library-count-sub {
+    font-size: 0.72rem;
+    color: var(--dim);
+    margin-top: 0.25rem;
+  }
+
+  .library-controls {
+    display: flex;
+    gap: 0.875rem;
+    margin-bottom: 0.875rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── SEGMENT CARD v2 ── */
+  .card-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+    min-width: 5rem;
+  }
+
+  .card-ep {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .card-num {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--gold);
+  }
+
+  .card-center { flex: 1; }
+
+  .card-film-title {
+    font-size: 1rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .card-topic-inline {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 0.15rem;
+  }
+
+  .card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.15rem;
+  }
+
+  .card-dates {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+  }
+
+  .card-status-bottom {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.12rem 0.4rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.25rem;
+  }
+
+  @media (max-width: 600px) {
+    .library-hero { grid-template-columns: 1fr; min-height: auto; }
+    .library-logo-box { padding-right: 0; padding-bottom: 1rem; }
+    .library-quote-box { border-left: none; border-right: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1rem 0; }
+    .library-count-box { padding-left: 0; padding-top: 1rem; }
+    .library-logo { width: 120px; height: 120px; }
+  }
+
 </style>
 </head>
 <body>
@@ -886,7 +1042,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.9</span>
+    <span class="header-version">v2.0</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -895,33 +1051,39 @@
 </header>
 
 <nav id="app-nav">
-  <button class="nav-tab active" onclick="showView('dashboard')">Dashboard</button>
+  <button class="nav-tab active" onclick="showView('dashboard')">The Library</button>
   <button class="nav-tab" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
-  <button class="nav-tab" onclick="showView('archive')">Archive</button>
 </nav>
 
 <main id="app-main">
 
-  <!-- ── DASHBOARD ── -->
+  <!-- ── LIBRARY (combined dashboard + archive) ── -->
   <div class="view active" id="view-dashboard">
-    <div class="dash-hero">
-      <img src="logo-dashboard.jpg" alt="The Truthsayer" class="dash-logo">
-      <p class="dash-tagline">&ldquo;No matter how much we ask after the truth, self-awareness is often unpleasant. We do not feel kindly toward the Truthsayer.&rdquo;</p>
-      <p class="dash-attribution">&mdash; Frank Herbert, <em>God Emperor of Dune</em></p>
+
+    <!-- HERO ROW -->
+    <div class="library-hero">
+      <div class="library-logo-box">
+        <img src="logo-dashboard.jpg" alt="The Truthsayer" class="library-logo">
+      </div>
+      <div class="library-quote-box">
+        <p class="library-quote">&ldquo;No matter how much we ask after the truth, self-awareness is often unpleasant. We do not feel kindly toward the Truthsayer.&rdquo;</p>
+        <p class="library-attr">&mdash; Frank Herbert, <em>God Emperor of Dune</em></p>
+      </div>
+      <div class="library-count-box">
+        <div class="library-count-num" id="stat-total">—</div>
+        <div class="library-count-label">Segments</div>
+        <div class="library-count-sub" id="stat-published-sub"></div>
+      </div>
     </div>
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num" id="stat-total">—</div>
-        <div class="stat-label">Segments</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-published">—</div>
-        <div class="stat-label">Published</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-latest">—</div>
-        <div class="stat-label">Latest TS#</div>
-      </div>
+
+    <!-- SORT + SEARCH -->
+    <div class="library-controls">
+      <input type="text" class="search-input" placeholder="Search film, topic..." id="archive-search" oninput="filterArchive()">
+      <select class="filter-select" id="archive-filter" onchange="filterArchive()">
+        <option value="all">All segments</option>
+        <option value="published">Published</option>
+        <option value="draft">Drafts</option>
+      </select>
     </div>
     <div class="sort-row" id="dash-sort-row">
       <span class="sort-label">Sort</span>
@@ -930,7 +1092,7 @@
       <button class="sort-btn" id="dsort-record" onclick="setDashSort('recordDate', this)">Record Date</button>
       <button class="sort-btn" id="dsort-air" onclick="setDashSort('airDate', this)">Air Date</button>
     </div>
-    <p class="recent-header">Recent segments</p>
+
     <div id="recent-list"><div class="empty-state"><div class="loading-spinner"></div></div></div>
   </div>
 
@@ -1085,25 +1247,7 @@
     </div>
   </div>
 
-  <!-- ── ARCHIVE ── -->
-  <div class="view" id="view-archive">
-    <div class="sort-row" id="archive-sort-row">
-      <span class="sort-label">Sort</span>
-      <button class="sort-btn active desc" id="asort-ts" onclick="setArchiveSort('tsNumber', this)">TS #</button>
-      <button class="sort-btn" id="asort-film" onclick="setArchiveSort('film', this)">Film</button>
-      <button class="sort-btn" id="asort-record" onclick="setArchiveSort('recordDate', this)">Record Date</button>
-      <button class="sort-btn" id="asort-air" onclick="setArchiveSort('airDate', this)">Air Date</button>
-    </div>
-    <div class="archive-controls">
-      <input type="text" class="search-input" placeholder="Search film, topic, true story..." id="archive-search" oninput="filterArchive()">
-      <select class="filter-select" id="archive-filter" onchange="filterArchive()">
-        <option value="all">All segments</option>
-        <option value="published">Published</option>
-        <option value="draft">Drafts</option>
-      </select>
-    </div>
-    <div id="archive-list"><div class="empty-state"><div class="loading-spinner"></div></div></div>
-  </div>
+
 
 </main>
 
@@ -1260,7 +1404,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1302,9 +1446,8 @@ function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + id).classList.add('active');
-  const labels = ['dashboard', 'new-segment', 'archive'];
+  const labels = ['dashboard', 'new-segment'];
   document.querySelectorAll('.nav-tab')[labels.indexOf(id)]?.classList.add('active');
-  if (id === 'archive') renderArchive();
   if (id === 'new-segment') autoIncrementEpisode();
 }
 
@@ -1503,8 +1646,7 @@ function clearForm() {
 // ── DASHBOARD ──
 let dashSortField = 'tsNumber';
 let dashSortDir = 'desc';
-let archiveSortField = 'tsNumber';
-let archiveSortDir = 'desc';
+
 
 function setDashSort(field, btn) {
   if (dashSortField === field) {
@@ -1517,22 +1659,10 @@ function setDashSort(field, btn) {
     b.classList.remove('active','asc','desc');
   });
   btn.classList.add('active', dashSortDir);
-  renderDashboard();
-}
-
-function setArchiveSort(field, btn) {
-  if (archiveSortField === field) {
-    archiveSortDir = archiveSortDir === 'desc' ? 'asc' : 'desc';
-  } else {
-    archiveSortField = field;
-    archiveSortDir = 'desc';
-  }
-  document.querySelectorAll('#archive-sort-row .sort-btn').forEach(b => {
-    b.classList.remove('active','asc','desc');
-  });
-  btn.classList.add('active', archiveSortDir);
   filterArchive();
 }
+
+
 
 function sortSegments(segments, field, dir) {
   return [...segments].sort((a, b) => {
@@ -1552,29 +1682,13 @@ function sortSegments(segments, field, dir) {
 function renderDashboard() {
   const segments = window._allSegments || [];
   const published = segments.filter(s => s.status === 'published');
-  const tsNums = segments.map(s => s.tsNumber).filter(Boolean);
-  const latest = tsNums.length ? Math.max(...tsNums) : '—';
 
-  document.getElementById('stat-total').textContent = segments.length;
-  document.getElementById('stat-published').textContent = published.length;
-  document.getElementById('stat-latest').textContent = latest !== '—' ? 'TS-' + latest : '—';
+  const totalEl = document.getElementById('stat-total');
+  const subEl = document.getElementById('stat-published-sub');
+  if (totalEl) totalEl.textContent = segments.length || '—';
+  if (subEl) subEl.textContent = published.length + ' published';
 
-  const list = document.getElementById('recent-list');
-  const sorted = sortSegments(segments, dashSortField, dashSortDir).slice(0, 15);
-  if (!sorted.length) {
-    list.innerHTML = '<div class="empty-state"><p>No segments yet. Add your first one.</p></div>';
-    return;
-  }
-  list.innerHTML = sorted.map(s => `
-    <div class="recent-item" onclick="openModal('${s.id}')">
-      <span class="recent-num">${s.tsNumber ? 'TS-' + s.tsNumber : '—'}</span>
-      <span class="recent-film">${esc(s.film)}</span>
-      <div class="recent-dates">
-        <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
-        <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
-      </div>
-    </div>
-  `).join('');
+  filterArchive();
 }
 
 // ── ARCHIVE ──
@@ -1591,24 +1705,32 @@ function filterArchive() {
     return ['film','topic','trueStory','fullText'].some(k => (s[k] || '').toLowerCase().includes(q));
   });
 
-  const filtered = sortSegments(base, archiveSortField, archiveSortDir);
+  const filtered = sortSegments(base, dashSortField, dashSortDir);
 
-  const list = document.getElementById('archive-list');
+  const list = document.getElementById('recent-list');
   if (!filtered.length) {
     list.innerHTML = '<div class="empty-state"><p>No segments found.</p></div>';
     return;
   }
   list.innerHTML = filtered.map(s => `
     <div class="segment-card" onclick="openModal('${s.id}')">
-      <div class="card-header">
-        <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
-        <span class="card-film">${esc(s.film)}<span class="card-status status-${s.status}">${s.status}</span></span>
-        <div class="recent-dates">
-          <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
-          <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+      <div class="card-header" style="align-items:flex-start">
+        <div class="card-left">
+          <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
+          <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
+        </div>
+        <div class="card-center">
+          <div class="card-film-title">${esc(s.film)}</div>
+          ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
+        </div>
+        <div class="card-right">
+          <div class="card-dates">
+            <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
+            <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+          </div>
+          <span class="card-status-bottom status-${s.status}">${s.status}</span>
         </div>
       </div>
-      ${s.topic ? `<div class="card-topic">${esc(s.topic)}</div>` : ''}
     </div>
   `).join('');
 }
