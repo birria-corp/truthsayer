@@ -691,7 +691,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.3</span>
+    <span class="header-version">v1.4</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -958,7 +958,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.4';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1348,27 +1348,50 @@ async function runBulkImport() {
   document.getElementById('bulk-progress-wrap').classList.remove('hidden');
   document.getElementById('bulk-log').innerHTML = '';
 
-  let success = 0, failed = 0;
+  // Build set of existing tsNumbers to prevent duplicates
+  bulkLog('Checking for existing segments...', 'info');
+  const existingNums = new Set();
+  try {
+    const snap = await window._getDocs(window._collection(window._db, 'segments'));
+    snap.forEach(d => {
+      const n = d.data().tsNumber;
+      if (n) existingNums.add(n);
+    });
+    bulkLog('Found ' + existingNums.size + ' existing segments in Firestore.', 'info');
+  } catch(e) {
+    bulkLog('Warning: could not check existing segments — ' + e.message, 'err');
+  }
+
+  let success = 0, skipped = 0, failed = 0;
 
   for (let i = 0; i < bulkSegments.length; i++) {
     const seg = bulkSegments[i];
-    const label = (seg.film || 'Segment ' + (i+1));
-    try {
-      await window._addDoc(
-        window._collection(window._db, 'segments'),
-        {
-          ...seg,
-          authorUid: window._currentUser.uid,
-          authorEmail: window._currentUser.email,
-          createdAt: window._serverTimestamp(),
-          updatedAt: window._serverTimestamp()
-        }
-      );
-      success++;
-      bulkLog('✓ [' + (i+1) + '/' + bulkSegments.length + '] ' + label, 'ok');
-    } catch(e) {
-      failed++;
-      bulkLog('✗ [' + (i+1) + '/' + bulkSegments.length + '] ' + label + ' — ' + e.message, 'err');
+    const label = seg.film || 'Segment ' + (i+1);
+    const tsNum = seg.tsNumber;
+
+    // Skip if already exists
+    if (tsNum && existingNums.has(tsNum)) {
+      skipped++;
+      bulkLog('— [' + (i+1) + '/' + bulkSegments.length + '] SKIP (already exists) ' + label, 'info');
+    } else {
+      try {
+        await window._addDoc(
+          window._collection(window._db, 'segments'),
+          {
+            ...seg,
+            authorUid: window._currentUser.uid,
+            authorEmail: window._currentUser.email,
+            createdAt: window._serverTimestamp(),
+            updatedAt: window._serverTimestamp()
+          }
+        );
+        success++;
+        if (tsNum) existingNums.add(tsNum);
+        bulkLog('✓ [' + (i+1) + '/' + bulkSegments.length + '] ' + label, 'ok');
+      } catch(e) {
+        failed++;
+        bulkLog('✗ [' + (i+1) + '/' + bulkSegments.length + '] ' + label + ' — ' + e.message, 'err');
+      }
     }
 
     const pct = Math.round(((i+1) / bulkSegments.length) * 100);
@@ -1378,16 +1401,22 @@ async function runBulkImport() {
     await new Promise(r => setTimeout(r, 250));
   }
 
-  btn.disabled = false;
-  btn.textContent = 'Import Batch';
-
+  // Show summary
   const summary = document.createElement('div');
   summary.className = 'bulk-summary';
-  summary.textContent = 'Done — ' + success + ' imported, ' + failed + ' failed.';
+  summary.textContent = 'Done — ' + success + ' imported, ' + skipped + ' skipped (already existed), ' + failed + ' failed.';
   document.getElementById('bulk-log').prepend(summary);
 
   await window._loadSegments();
-  toast('Batch import complete — ' + success + ' segments added');
+  toast('Batch complete — ' + success + ' imported, ' + skipped + ' skipped');
+
+  // Auto-clear file after successful import — reset drop zone
+  // Keep log visible so user can review results
+  bulkSegments = null;
+  document.getElementById('bulk-file-name').textContent = '';
+  document.getElementById('bulk-file-input').value = '';
+  btn.textContent = 'Import Batch';
+  // btn stays disabled until new file is loaded
 }
 
 function bulkLog(msg, type) {
