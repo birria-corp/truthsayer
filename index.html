@@ -2266,7 +2266,8 @@ async function runBatchEdit() {
           ? `ep-${epNum}-${filmSlug}`
           : tsNum ? `ts-${tsNum}-${filmSlug}` : null;
 
-        const updateData = { ...seg, updatedAt: window._serverTimestamp() };
+        const { _matchTs, _old_ts, ...cleanSeg } = seg;
+        const updateData = { ...cleanSeg, updatedAt: window._serverTimestamp() };
         if (segmentId) updateData.segmentId = segmentId;
 
         const ref = window._doc(window._db, 'segments', tsToDocId[tsNum]);
