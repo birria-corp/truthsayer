@@ -1034,6 +1034,49 @@
     .library-logo { width: 120px; height: 120px; }
   }
 
+
+  /* ── SCHEDULED / COMING SOON ── */
+  .card-coming-soon {
+    opacity: 0.75;
+    cursor: default;
+    border-left: 3px solid var(--gold-dim);
+  }
+
+  .card-coming-soon:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .coming-soon-label {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.12rem 0.5rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--gold-bg);
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+    margin-top: 0.25rem;
+  }
+
+  .coming-soon-film {
+    font-size: 1rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .coming-soon-air {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .status-scheduled {
+    background: var(--gold-bg);
+    color: var(--gold);
+  }
+
 </style>
 </head>
 <body>
@@ -1042,7 +1085,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v2.1</span>
+    <span class="header-version">v2.2</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -1305,6 +1348,7 @@
           <label class="modal-edit-label">Status</label>
           <select class="modal-edit-input" id="edit-status">
             <option value="published">Published</option>
+            <option value="scheduled">Scheduled</option>
             <option value="draft">Draft</option>
           </select>
         </div>
@@ -1418,7 +1462,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1708,12 +1752,27 @@ function renderDashboard() {
 // ── ARCHIVE ──
 function renderArchive() { filterArchive(); }
 
+function isEffectivelyPublished(s) {
+  // Scheduled segments with a past airDate are treated as published for public view
+  if (s.status === 'published') return true;
+  if (s.status === 'scheduled' && s.airDate) {
+    return new Date(s.airDate) <= new Date();
+  }
+  return false;
+}
+
 function filterArchive() {
   const q = (document.getElementById('archive-search')?.value || '').toLowerCase();
   const f = document.getElementById('archive-filter')?.value || 'all';
+  const isAdmin = !!window._currentUser;
   const segments = window._allSegments || [];
 
   const base = segments.filter(s => {
+    // Visibility: admins see all; public sees published + effectively-published scheduled
+    if (!isAdmin) {
+      if (s.status === 'draft') return false;
+      if (s.status === 'scheduled' && !isEffectivelyPublished(s)) return true; // show as coming soon
+    }
     if (f !== 'all' && s.status !== f) return false;
     if (!q) return true;
     return ['film','topic','trueStory','fullText'].some(k => (s[k] || '').toLowerCase().includes(q));
@@ -1726,27 +1785,47 @@ function filterArchive() {
     list.innerHTML = '<div class="empty-state"><p>No segments found.</p></div>';
     return;
   }
-  list.innerHTML = filtered.map(s => `
-    <div class="segment-card" onclick="openModal('${s.id}')">
-      <div class="card-header" style="align-items:flex-start">
-        <div class="card-left">
-          <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
-          <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
-        </div>
-        <div class="card-center">
-          <div class="card-film-title">${esc(s.film)}</div>
-          ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
-        </div>
-        <div class="card-right">
-          <div class="card-dates">
-            <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
-            <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+  list.innerHTML = filtered.map(s => {
+    const comingSoon = !isAdmin && s.status === 'scheduled' && !isEffectivelyPublished(s);
+    if (comingSoon) {
+      return `
+        <div class="segment-card card-coming-soon">
+          <div class="card-header" style="align-items:flex-start">
+            <div class="card-left">
+              <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
+              <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
+            </div>
+            <div class="card-center">
+              <div class="coming-soon-film">${esc(s.film)}</div>
+              <div class="coming-soon-air">Airing ${formatDate(s.airDate)}</div>
+            </div>
+            <div class="card-right">
+              <span class="coming-soon-label">Coming Soon</span>
+            </div>
           </div>
-          <span class="card-status-bottom status-${s.status}">${s.status}</span>
+        </div>`;
+    }
+    return `
+      <div class="segment-card" onclick="openModal('${s.id}')">
+        <div class="card-header" style="align-items:flex-start">
+          <div class="card-left">
+            <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
+            <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
+          </div>
+          <div class="card-center">
+            <div class="card-film-title">${esc(s.film)}</div>
+            ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
+          </div>
+          <div class="card-right">
+            <div class="card-dates">
+              <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
+              <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+            </div>
+            <span class="card-status-bottom status-${s.status}">${s.status}</span>
+          </div>
         </div>
-      </div>
-    </div>
-  `).join('');
+      </div>`;
+  }).join('');
 }
 
 // ── MODAL ──
