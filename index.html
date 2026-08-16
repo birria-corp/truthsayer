@@ -749,6 +749,108 @@
     margin-right: 0.2rem;
   }
 
+
+  /* ── EDIT MODE ── */
+  .modal-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .modal-edit-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+  }
+
+  .modal-edit-input {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  .modal-edit-input:focus { outline: none; border-color: var(--gold-dim); }
+
+  .modal-edit-textarea {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    padding: 0.75rem;
+    width: 100%;
+    min-height: 200px;
+    resize: vertical;
+    line-height: 1.7;
+    transition: border-color 0.15s;
+  }
+
+  .modal-edit-textarea:focus { outline: none; border-color: var(--gold-dim); }
+
+  .modal-edit-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .modal-edit-row.three {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .modal-view { display: block; }
+  .modal-edit { display: none; }
+  .modal.editing .modal-view { display: none; }
+  .modal.editing .modal-edit { display: block; }
+
+  .edit-entry-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.625rem;
+    align-items: start;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .edit-entry-row:last-child { border-bottom: none; }
+
+  .edit-entry-num {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--gold);
+    padding-top: 0.5rem;
+    min-width: 1.5rem;
+  }
+
+  .edit-entry-fields { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .edit-entry-true {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    cursor: pointer;
+    margin-top: 0.25rem;
+  }
+
+  .edit-entry-true input { width: auto; }
+
+  .segment-id-display {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--dim);
+    margin-top: 0.25rem;
+  }
+
 </style>
 </head>
 <body>
@@ -757,7 +859,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.7</span>
+    <span class="header-version">v1.8</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -767,7 +869,7 @@
 
 <nav id="app-nav">
   <button class="nav-tab active" onclick="showView('dashboard')">Dashboard</button>
-  <button class="nav-tab" onclick="showView('new-segment')" id="tab-new">New Segment</button>
+  <button class="nav-tab" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
   <button class="nav-tab" onclick="showView('archive')">Archive</button>
 </nav>
 
@@ -865,7 +967,17 @@
         </div>
         <div class="field">
           <label for="f-ep-num">Episode #</label>
-          <input type="number" id="f-ep-num" placeholder="320">
+          <input type="number" id="f-ep-num" placeholder="auto">
+        </div>
+        <div class="field">
+          <label for="f-ts-num" style="opacity:0">x</label>
+          <div id="segment-id-preview" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);padding:0.5rem 0.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">ep-???-film-slug</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="f-record-date">Record Date</label>
+          <input type="date" id="f-record-date">
         </div>
         <div class="field">
           <label for="f-air-date">Air Date</label>
@@ -966,6 +1078,7 @@
     <button class="modal-close" onclick="closeModalDirect()">✕</button>
     <div class="modal-film" id="modal-film"></div>
     <div class="modal-meta" id="modal-meta"></div>
+    <div class="segment-id-display" id="modal-segment-id"></div>
     <p class="modal-section-label">Full segment</p>
     <div class="modal-fulltext" id="modal-fulltext"></div>
     <p class="modal-section-label">Entries</p>
@@ -973,6 +1086,79 @@
     <p class="modal-section-label">True story</p>
     <div style="font-size:1rem;color:var(--gold);margin-bottom:0.25rem" id="modal-truth"></div>
     <div class="modal-actions" id="modal-actions"></div>
+
+    <!-- EDIT MODE -->
+    <div class="modal-edit" id="modal-edit-form">
+      <div class="modal-edit-row three" style="margin-bottom:0.875rem">
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">TS Number</label>
+          <input type="number" class="modal-edit-input" id="edit-ts-num">
+        </div>
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Episode #</label>
+          <input type="number" class="modal-edit-input" id="edit-ep-num">
+        </div>
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Record Date</label>
+          <input type="date" class="modal-edit-input" id="edit-record-date">
+        </div>
+      </div>
+      <div class="modal-edit-row" style="margin-bottom:0.875rem">
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Air Date</label>
+          <input type="date" class="modal-edit-input" id="edit-air-date">
+        </div>
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Status</label>
+          <select class="modal-edit-input" id="edit-status">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-edit-field" style="margin-bottom:0.875rem">
+        <label class="modal-edit-label">Film Title</label>
+        <input type="text" class="modal-edit-input" id="edit-film">
+      </div>
+      <div class="modal-edit-row" style="margin-bottom:0.875rem">
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Topic / Angle</label>
+          <input type="text" class="modal-edit-input" id="edit-topic">
+        </div>
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Variant</label>
+          <select class="modal-edit-input" id="edit-variant">
+            <option value="standard">Standard</option>
+            <option value="list-false">List — find the false</option>
+            <option value="list-true">List — find the true</option>
+            <option value="all-true">All true</option>
+            <option value="count">Count format</option>
+            <option value="race">Trivia race</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-edit-field" style="margin-bottom:0.875rem">
+        <label class="modal-edit-label">Entries</label>
+        <div id="edit-entries-container"></div>
+      </div>
+      <div class="modal-edit-field" style="margin-bottom:0.875rem">
+        <label class="modal-edit-label">True Story Summary</label>
+        <input type="text" class="modal-edit-input" id="edit-true-story">
+      </div>
+      <div class="modal-edit-field" style="margin-bottom:0.875rem">
+        <label class="modal-edit-label">Closer</label>
+        <input type="text" class="modal-edit-input" id="edit-closer">
+      </div>
+      <div class="modal-edit-field" style="margin-bottom:1rem">
+        <label class="modal-edit-label">Full Segment Text</label>
+        <textarea class="modal-edit-textarea" id="edit-fulltext"></textarea>
+      </div>
+      <div style="display:flex;gap:0.75rem;padding-top:0.875rem;border-top:1px solid var(--border)">
+        <button class="btn btn-ghost btn-sm" onclick="cancelEdit()">Cancel</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary btn-sm" id="edit-save-btn" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1039,7 +1225,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1084,6 +1270,17 @@ function showView(id) {
   const labels = ['dashboard', 'new-segment', 'archive'];
   document.querySelectorAll('.nav-tab')[labels.indexOf(id)]?.classList.add('active');
   if (id === 'archive') renderArchive();
+  if (id === 'new-segment') autoIncrementEpisode();
+}
+
+function autoIncrementEpisode() {
+  const segments = window._allSegments || [];
+  const epNums = segments.map(s => s.episodeNumber).filter(Boolean);
+  if (epNums.length) {
+    const next = Math.max(...epNums) + 1;
+    const el = document.getElementById('f-ep-num');
+    if (el && !el.value) el.value = next;
+  }
 }
 
 // ── JSON IMPORT ──
@@ -1186,6 +1383,23 @@ document.addEventListener('DOMContentLoaded', () => {
   initEntries();
   setDefaultDate();
   document.getElementById('f-fulltext').addEventListener('input', updateWordCount);
+
+  // Live segment ID preview
+  function updateSegmentIdPreview() {
+    const ep = document.getElementById('f-ep-num').value;
+    const ts = document.getElementById('f-ts-num').value;
+    const film = document.getElementById('f-film').value.trim();
+    const slug = film.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'film-title';
+    const preview = ep ? `ep-${ep}-${slug}` : ts ? `ts-${ts}-${slug}` : `ep-???-${slug}`;
+    const el = document.getElementById('segment-id-preview');
+    if (el) el.textContent = preview;
+  }
+
+  ['f-ep-num','f-ts-num','f-film'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateSegmentIdPreview);
+  });
+
   if (window._loadSegments) window._loadSegments();
 });
 
@@ -1240,7 +1454,7 @@ async function saveSegment(status) {
 }
 
 function clearForm() {
-  ['f-film','f-topic','f-ts-num','f-ep-num','f-true-story','f-closer','f-fulltext'].forEach(id => {
+  ['f-film','f-topic','f-ts-num','f-ep-num','f-record-date','f-true-story','f-closer','f-fulltext'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1368,10 +1582,17 @@ function filterArchive() {
 function openModal(id) {
   const s = (window._allSegments || []).find(x => x.id === id);
   if (!s) return;
+  window._editingId = id;
+  window._editingSegment = s;
+
+  document.getElementById('modal').classList.remove('editing');
+  document.getElementById('modal-edit-form').style.display = 'none';
 
   document.getElementById('modal-film').textContent = s.film || '';
   document.getElementById('modal-meta').innerHTML =
-    `${s.tsNumber ? 'TS-' + s.tsNumber : ''} ${s.episodeNumber ? '· Ep ' + s.episodeNumber : ''} · ${formatDate(s.airDate)} · ${s.variant || 'standard'} · <span class="card-status status-${s.status}">${s.status}</span>`;
+    `${s.tsNumber ? 'TS-' + s.tsNumber : ''} ${s.episodeNumber ? '· Ep ' + s.episodeNumber : ''} · ${formatDate(s.recordDate) ? 'Rec ' + formatDate(s.recordDate) + ' · ' : ''}Air ${formatDate(s.airDate)} · ${s.variant || 'standard'} · <span class="card-status status-${s.status}">${s.status}</span>`;
+
+  document.getElementById('modal-segment-id').textContent = s.segmentId || '';
 
   const entriesEl = document.getElementById('modal-entries');
   entriesEl.innerHTML = (s.entries || []).map((e, i) => `
@@ -1387,20 +1608,137 @@ function openModal(id) {
   const actions = document.getElementById('modal-actions');
   actions.innerHTML = '';
   if (window._currentUser) {
-    const delBtn = document.createElement('button');
-    delBtn.className = 'btn btn-danger btn-sm';
-    delBtn.textContent = 'Delete';
-    delBtn.onclick = () => deleteSegment(id);
-    actions.appendChild(delBtn);
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary btn-sm';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = () => enterEditMode(s);
+    actions.appendChild(editBtn);
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn btn-secondary btn-sm';
     copyBtn.textContent = 'Copy text';
     copyBtn.onclick = () => navigator.clipboard.writeText(s.fullText || '').then(() => toast('Copied ✓'));
     actions.appendChild(copyBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = () => deleteSegment(id);
+    actions.appendChild(delBtn);
   }
 
   document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function enterEditMode(s) {
+  document.getElementById('modal').classList.add('editing');
+  document.getElementById('modal-edit-form').style.display = 'block';
+
+  document.getElementById('edit-ts-num').value = s.tsNumber || '';
+  document.getElementById('edit-ep-num').value = s.episodeNumber || '';
+  document.getElementById('edit-record-date').value = s.recordDate || '';
+  document.getElementById('edit-air-date').value = s.airDate || '';
+  document.getElementById('edit-film').value = s.film || '';
+  document.getElementById('edit-topic').value = s.topic || '';
+  document.getElementById('edit-variant').value = s.variant || 'standard';
+  document.getElementById('edit-true-story').value = s.trueStory || '';
+  document.getElementById('edit-closer').value = s.closer || '';
+  document.getElementById('edit-fulltext').value = s.fullText || '';
+  document.getElementById('edit-status').value = s.status || 'published';
+
+  renderEditEntries(s.entries || []);
+  document.getElementById('modal-edit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderEditEntries(entryList) {
+  window._editEntries = entryList.map(e => ({ ...e }));
+  const container = document.getElementById('edit-entries-container');
+  container.innerHTML = '';
+  window._editEntries.forEach((e, i) => {
+    const div = document.createElement('div');
+    div.className = 'edit-entry-row';
+    div.innerHTML = `
+      <span class="edit-entry-num">#${i+1}</span>
+      <div class="edit-entry-fields">
+        <textarea class="modal-edit-input" rows="2" style="min-height:0;font-family:var(--font-body)" oninput="window._editEntries[${i}].text=this.value">${esc(e.text)}</textarea>
+        <label class="edit-entry-true">
+          <input type="radio" name="edit-true-entry" ${e.isTrue ? 'checked' : ''} onchange="setEditTrue(${i})">
+          <span>True entry</span>
+        </label>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:0.25rem" onclick="removeEditEntry(${i})" ${window._editEntries.length <= 2 ? 'disabled' : ''}>✕</button>
+    `;
+    container.appendChild(div);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-ghost btn-sm';
+  addBtn.style.marginTop = '0.5rem';
+  addBtn.textContent = '+ Add entry';
+  addBtn.onclick = () => { window._editEntries.push({ text: '', isTrue: false }); renderEditEntries(window._editEntries); };
+  container.appendChild(addBtn);
+}
+
+function setEditTrue(i) {
+  window._editEntries.forEach((e, idx) => e.isTrue = (idx === i));
+  renderEditEntries(window._editEntries);
+}
+
+function removeEditEntry(i) {
+  if (window._editEntries.length <= 2) return;
+  const wasTrue = window._editEntries[i].isTrue;
+  window._editEntries.splice(i, 1);
+  if (wasTrue) window._editEntries[0].isTrue = true;
+  renderEditEntries(window._editEntries);
+}
+
+function cancelEdit() {
+  document.getElementById('modal').classList.remove('editing');
+  document.getElementById('modal-edit-form').style.display = 'none';
+}
+
+async function saveEdit() {
+  if (!window._currentUser || !window._editingId) return;
+  const btn = document.getElementById('edit-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const epNum = parseInt(document.getElementById('edit-ep-num').value) || null;
+  const tsNum = parseInt(document.getElementById('edit-ts-num').value) || null;
+  const film = document.getElementById('edit-film').value.trim();
+  const filmSlug = film.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const segmentId = epNum
+    ? `ep-${epNum}-${filmSlug}`
+    : tsNum ? `ts-${tsNum}-${filmSlug}` : null;
+
+  try {
+    const ref = window._doc(window._db, 'segments', window._editingId);
+    await window._setDoc(ref, {
+      tsNumber: tsNum,
+      episodeNumber: epNum,
+      recordDate: document.getElementById('edit-record-date').value || null,
+      airDate: document.getElementById('edit-air-date').value || null,
+      film,
+      topic: document.getElementById('edit-topic').value.trim(),
+      variant: document.getElementById('edit-variant').value,
+      entries: window._editEntries,
+      trueStory: document.getElementById('edit-true-story').value.trim(),
+      closer: document.getElementById('edit-closer').value.trim(),
+      fullText: document.getElementById('edit-fulltext').value.trim(),
+      status: document.getElementById('edit-status').value,
+      segmentId,
+      updatedAt: window._serverTimestamp()
+    }, { merge: true });
+
+    toast('Saved ✓');
+    cancelEdit();
+    await window._loadSegments();
+    openModal(window._editingId);
+  } catch(e) {
+    toast('Save failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Changes';
+  }
 }
 
 function closeModal(e) { if (e.target.id === 'modal-overlay') closeModalDirect(); }
