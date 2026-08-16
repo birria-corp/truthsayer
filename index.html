@@ -177,17 +177,28 @@
   }
 
   .dash-logo {
-    width: 120px;
-    height: 120px;
+    width: 280px;
+    height: 280px;
     object-fit: contain;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
   }
 
   .dash-tagline {
     font-family: var(--font-display);
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--muted);
     font-style: italic;
+    max-width: 520px;
+    margin: 0 auto 0.5rem;
+    line-height: 1.7;
+  }
+
+  .dash-attribution {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    color: var(--dim);
+    font-style: normal;
   }
 
   .stats-row {
@@ -746,7 +757,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.6</span>
+    <span class="header-version">v1.7</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -765,8 +776,9 @@
   <!-- ── DASHBOARD ── -->
   <div class="view active" id="view-dashboard">
     <div class="dash-hero">
-      <img src="icon.png" alt="Truthsayer" class="dash-logo">
-      <p class="dash-tagline">Two lies. One truth. Find it.</p>
+      <img src="logo-dashboard.jpg" alt="The Truthsayer" class="dash-logo">
+      <p class="dash-tagline">&ldquo;No matter how much we ask after the truth, self-awareness is often unpleasant. We do not feel kindly toward the Truthsayer.&rdquo;</p>
+      <p class="dash-attribution">&mdash; Frank Herbert, <em>God Emperor of Dune</em></p>
     </div>
     <div class="stats-row">
       <div class="stat-card">
@@ -1027,7 +1039,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 
 // ── AUTH ──
 function updateAuthUI(user) {
