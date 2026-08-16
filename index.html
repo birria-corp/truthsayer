@@ -851,6 +851,33 @@
     margin-top: 0.25rem;
   }
 
+
+  /* ── BULK MODE TOGGLE ── */
+  .bulk-mode-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .bulk-mode-btn {
+    flex: 1;
+    padding: 0.5rem 0;
+    font-size: 0.85rem;
+    font-family: var(--font-body);
+    background: var(--surface);
+    color: var(--muted);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .bulk-mode-btn:first-child { border-right: 1px solid var(--border2); }
+  .bulk-mode-btn.active { background: var(--gold-bg); color: var(--gold); font-weight: 600; }
+  .bulk-mode-btn:hover:not(.active) { color: var(--text); }
+
 </style>
 </head>
 <body>
@@ -859,7 +886,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.8</span>
+    <span class="header-version">v1.9</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -927,20 +954,28 @@
       <div id="import-feedback"></div>
     </div>
 
-    <!-- BULK IMPORT (collapsible) -->
+    <!-- BULK IMPORT / BATCH EDIT (collapsible) -->
     <div class="bulk-import-section" id="bulk-import-section">
       <button class="bulk-toggle" onclick="toggleBulk()" id="bulk-toggle-btn">
-        ▶ Bulk Import History
+        ▶ Bulk Import / Batch Edit
       </button>
       <div class="bulk-body hidden" id="bulk-body">
-        <p class="bulk-hint">Drag a segments batch JSON onto the drop zone, or click to browse. Writes all segments to Firestore with a progress log.</p>
+
+        <!-- MODE TOGGLE -->
+        <div class="bulk-mode-row">
+          <button class="bulk-mode-btn active" id="mode-btn-import" onclick="setBulkMode('import')">Import New</button>
+          <button class="bulk-mode-btn" id="mode-btn-edit" onclick="setBulkMode('edit')">Batch Edit</button>
+        </div>
+
+        <p class="bulk-hint" id="bulk-hint-text">Drag a segments JSON onto the drop zone, or click to browse. Writes new segments to Firestore — skips duplicates.</p>
+
         <div class="drop-zone" id="drop-zone"
           ondragover="onDragOver(event)"
           ondragleave="onDragLeave(event)"
           ondrop="onDrop(event)"
           onclick="document.getElementById('bulk-file-input').click()">
           <div class="drop-zone-icon">⬇</div>
-          <div class="drop-zone-label">Drop JSON batch file here</div>
+          <div class="drop-zone-label" id="drop-zone-label">Drop JSON batch file here</div>
           <div class="drop-zone-sub">or click to browse</div>
           <input type="file" id="bulk-file-input" accept=".json" style="display:none" onchange="onFileSelected(event)">
         </div>
@@ -951,7 +986,7 @@
         </div>
         <div id="bulk-log"></div>
         <div class="bulk-actions">
-          <button class="btn btn-primary btn-sm" id="bulk-import-btn" onclick="runBulkImport()" disabled>Import Batch</button>
+          <button class="btn btn-primary btn-sm" id="bulk-import-btn" onclick="runBulkAction()" disabled>Import Batch</button>
           <button class="btn btn-ghost btn-sm" onclick="clearBulk()">Clear</button>
         </div>
       </div>
@@ -1225,7 +1260,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1756,8 +1791,31 @@ async function deleteSegment(id) {
 
 function loadSegments() { if (window._loadSegments) window._loadSegments(); }
 
-// ── BULK IMPORT ──
+// ── BULK IMPORT / BATCH EDIT ──
 let bulkSegments = null;
+let bulkMode = 'import'; // 'import' | 'edit'
+
+function setBulkMode(mode) {
+  bulkMode = mode;
+  document.getElementById('mode-btn-import').classList.toggle('active', mode === 'import');
+  document.getElementById('mode-btn-edit').classList.toggle('active', mode === 'edit');
+
+  const hint = document.getElementById('bulk-hint-text');
+  const label = document.getElementById('drop-zone-label');
+  const btn = document.getElementById('bulk-import-btn');
+
+  if (mode === 'import') {
+    hint.textContent = 'Drag a segments JSON onto the drop zone, or click to browse. Writes new segments to Firestore — skips duplicates.';
+    label.textContent = 'Drop JSON batch file here';
+    btn.textContent = bulkSegments ? 'Import Batch' : 'Import Batch';
+  } else {
+    hint.textContent = 'Drag a segments JSON onto the drop zone. Finds existing segments by tsNumber and updates their fields. Does not create new documents.';
+    label.textContent = 'Drop JSON edit file here';
+    btn.textContent = bulkSegments ? 'Run Batch Edit' : 'Run Batch Edit';
+  }
+
+  clearBulk();
+}
 
 function toggleBulk() {
   const body = document.getElementById('bulk-body');
@@ -1765,7 +1823,7 @@ function toggleBulk() {
   const isHidden = body.classList.contains('hidden');
   body.classList.toggle('hidden', !isHidden);
   btn.classList.toggle('open', isHidden);
-  btn.textContent = (isHidden ? '▼' : '▶') + ' Bulk Import History';
+  btn.textContent = (isHidden ? '▼' : '▶') + ' Bulk Import / Batch Edit';
 }
 
 function onDragOver(e) {
@@ -1791,7 +1849,7 @@ function onFileSelected(e) {
 
 function loadBulkFile(file) {
   if (!file.name.endsWith('.json')) {
-    bulkLog('Not a JSON file — select a .json batch file.', 'err');
+    bulkLog('Not a JSON file — select a .json file.', 'err');
     return;
   }
   const reader = new FileReader();
@@ -1799,8 +1857,10 @@ function loadBulkFile(file) {
     try {
       bulkSegments = JSON.parse(e.target.result);
       if (!Array.isArray(bulkSegments)) throw new Error('JSON must be an array.');
+      const btn = document.getElementById('bulk-import-btn');
+      btn.disabled = false;
+      btn.textContent = bulkMode === 'import' ? 'Import Batch' : 'Run Batch Edit';
       document.getElementById('bulk-file-name').textContent = file.name + ' — ' + bulkSegments.length + ' segments ready';
-      document.getElementById('bulk-import-btn').disabled = false;
       bulkLog('Loaded ' + bulkSegments.length + ' segments from ' + file.name, 'info');
     } catch(err) {
       bulkLog('Failed to parse: ' + err.message, 'err');
@@ -1809,6 +1869,14 @@ function loadBulkFile(file) {
     }
   };
   reader.readAsText(file);
+}
+
+function runBulkAction() {
+  if (bulkMode === 'import') {
+    runBulkImport();
+  } else {
+    runBatchEdit();
+  }
 }
 
 async function runBulkImport() {
@@ -1822,15 +1890,11 @@ async function runBulkImport() {
   document.getElementById('bulk-progress-wrap').classList.remove('hidden');
   document.getElementById('bulk-log').innerHTML = '';
 
-  // Build set of existing tsNumbers to prevent duplicates
   bulkLog('Checking for existing segments...', 'info');
   const existingNums = new Set();
   try {
     const snap = await window._getDocs(window._collection(window._db, 'segments'));
-    snap.forEach(d => {
-      const n = d.data().tsNumber;
-      if (n) existingNums.add(n);
-    });
+    snap.forEach(d => { const n = d.data().tsNumber; if (n) existingNums.add(n); });
     bulkLog('Found ' + existingNums.size + ' existing segments in Firestore.', 'info');
   } catch(e) {
     bulkLog('Warning: could not check existing segments — ' + e.message, 'err');
@@ -1843,22 +1907,18 @@ async function runBulkImport() {
     const label = seg.film || 'Segment ' + (i+1);
     const tsNum = seg.tsNumber;
 
-    // Skip if already exists
     if (tsNum && existingNums.has(tsNum)) {
       skipped++;
-      bulkLog('— [' + (i+1) + '/' + bulkSegments.length + '] SKIP (already exists) ' + label, 'info');
+      bulkLog('— [' + (i+1) + '/' + bulkSegments.length + '] SKIP (exists) ' + label, 'info');
     } else {
       try {
-        await window._addDoc(
-          window._collection(window._db, 'segments'),
-          {
-            ...seg,
-            authorUid: window._currentUser.uid,
-            authorEmail: window._currentUser.email,
-            createdAt: window._serverTimestamp(),
-            updatedAt: window._serverTimestamp()
-          }
-        );
+        await window._addDoc(window._collection(window._db, 'segments'), {
+          ...seg,
+          authorUid: window._currentUser.uid,
+          authorEmail: window._currentUser.email,
+          createdAt: window._serverTimestamp(),
+          updatedAt: window._serverTimestamp()
+        });
         success++;
         if (tsNum) existingNums.add(tsNum);
         bulkLog('✓ [' + (i+1) + '/' + bulkSegments.length + '] ' + label, 'ok');
@@ -1871,26 +1931,102 @@ async function runBulkImport() {
     const pct = Math.round(((i+1) / bulkSegments.length) * 100);
     document.getElementById('bulk-progress-fill').style.width = pct + '%';
     document.getElementById('bulk-progress-text').textContent = (i+1) + ' of ' + bulkSegments.length + ' processed';
-
     await new Promise(r => setTimeout(r, 250));
   }
 
-  // Show summary
   const summary = document.createElement('div');
   summary.className = 'bulk-summary';
-  summary.textContent = 'Done — ' + success + ' imported, ' + skipped + ' skipped (already existed), ' + failed + ' failed.';
+  summary.textContent = 'Import done — ' + success + ' imported, ' + skipped + ' skipped, ' + failed + ' failed.';
   document.getElementById('bulk-log').prepend(summary);
 
   await window._loadSegments();
-  toast('Batch complete — ' + success + ' imported, ' + skipped + ' skipped');
+  toast('Import complete — ' + success + ' imported, ' + skipped + ' skipped');
 
-  // Auto-clear file after successful import — reset drop zone
-  // Keep log visible so user can review results
   bulkSegments = null;
   document.getElementById('bulk-file-name').textContent = '';
   document.getElementById('bulk-file-input').value = '';
   btn.textContent = 'Import Batch';
-  // btn stays disabled until new file is loaded
+}
+
+async function runBatchEdit() {
+  if (!window._currentUser) { toast('Sign in first'); return; }
+  if (!bulkSegments || !bulkSegments.length) { toast('Load a JSON file first'); return; }
+
+  const btn = document.getElementById('bulk-import-btn');
+  btn.disabled = true;
+  btn.textContent = 'Editing...';
+
+  document.getElementById('bulk-progress-wrap').classList.remove('hidden');
+  document.getElementById('bulk-log').innerHTML = '';
+
+  // Build tsNumber → docId map from existing segments
+  bulkLog('Loading existing segments...', 'info');
+  const tsToDocId = {};
+  try {
+    const snap = await window._getDocs(window._collection(window._db, 'segments'));
+    snap.forEach(d => {
+      const n = d.data().tsNumber;
+      if (n) tsToDocId[n] = d.id;
+    });
+    bulkLog('Found ' + Object.keys(tsToDocId).length + ' existing segments to match against.', 'info');
+  } catch(e) {
+    bulkLog('Error loading segments: ' + e.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Run Batch Edit';
+    return;
+  }
+
+  let success = 0, notFound = 0, failed = 0;
+
+  for (let i = 0; i < bulkSegments.length; i++) {
+    const seg = bulkSegments[i];
+    const label = (seg.film || 'Segment ' + (i+1)) + (seg.tsNumber ? ' (TS-' + seg.tsNumber + ')' : '');
+    const tsNum = seg.tsNumber;
+
+    if (!tsNum || !tsToDocId[tsNum]) {
+      notFound++;
+      bulkLog('— [' + (i+1) + '/' + bulkSegments.length + '] NOT FOUND — ' + label, 'info');
+    } else {
+      try {
+        // Generate segmentId if episode number present
+        const epNum = seg.episodeNumber || null;
+        const film = seg.film || '';
+        const filmSlug = film.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const segmentId = epNum
+          ? `ep-${epNum}-${filmSlug}`
+          : tsNum ? `ts-${tsNum}-${filmSlug}` : null;
+
+        const updateData = { ...seg, updatedAt: window._serverTimestamp() };
+        if (segmentId) updateData.segmentId = segmentId;
+
+        const ref = window._doc(window._db, 'segments', tsToDocId[tsNum]);
+        await window._setDoc(ref, updateData, { merge: true });
+        success++;
+        bulkLog('✓ [' + (i+1) + '/' + bulkSegments.length + '] Updated ' + label, 'ok');
+      } catch(e) {
+        failed++;
+        bulkLog('✗ [' + (i+1) + '/' + bulkSegments.length + '] ' + label + ' — ' + e.message, 'err');
+      }
+    }
+
+    const pct = Math.round(((i+1) / bulkSegments.length) * 100);
+    document.getElementById('bulk-progress-fill').style.width = pct + '%';
+    document.getElementById('bulk-progress-text').textContent = (i+1) + ' of ' + bulkSegments.length + ' processed';
+    await new Promise(r => setTimeout(r, 250));
+  }
+
+  const summary = document.createElement('div');
+  summary.className = 'bulk-summary';
+  summary.textContent = 'Batch edit done — ' + success + ' updated, ' + notFound + ' not found, ' + failed + ' failed.';
+  document.getElementById('bulk-log').prepend(summary);
+
+  await window._loadSegments();
+  toast('Batch edit complete — ' + success + ' updated');
+
+  bulkSegments = null;
+  document.getElementById('bulk-file-name').textContent = '';
+  document.getElementById('bulk-file-input').value = '';
+  btn.textContent = 'Run Batch Edit';
 }
 
 function bulkLog(msg, type) {
@@ -1910,6 +2046,7 @@ function clearBulk() {
   document.getElementById('bulk-progress-text').textContent = '';
   document.getElementById('bulk-progress-wrap').classList.add('hidden');
   document.getElementById('bulk-import-btn').disabled = true;
+  document.getElementById('bulk-import-btn').textContent = bulkMode === 'import' ? 'Import Batch' : 'Run Batch Edit';
   document.getElementById('bulk-file-input').value = '';
 }
 
