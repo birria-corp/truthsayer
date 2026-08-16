@@ -683,6 +683,61 @@
     margin-top: 0.875rem;
   }
 
+
+  /* ── SORT CONTROLS ── */
+  .sort-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .sort-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  .sort-btn {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-family: var(--font-body);
+    padding: 0.35rem 0.8rem;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .sort-btn:hover { color: var(--text); border-color: var(--border2); }
+  .sort-btn.active { color: var(--gold); border-color: var(--gold-dim); background: var(--gold-bg); }
+  .sort-btn.active.desc::after { content: ' ↓'; }
+  .sort-btn.active.asc::after { content: ' ↑'; }
+
+  /* ── RECENT ITEM updated for two dates ── */
+  .recent-dates {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+  }
+
+  .recent-date-pair {
+    font-size: 0.72rem;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  .recent-date-pair span {
+    color: var(--muted);
+    margin-right: 0.2rem;
+  }
+
 </style>
 </head>
 <body>
@@ -691,7 +746,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v1.4</span>
+    <span class="header-version">v1.5</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -726,6 +781,13 @@
         <div class="stat-num" id="stat-latest">—</div>
         <div class="stat-label">Latest TS#</div>
       </div>
+    </div>
+    <div class="sort-row" id="dash-sort-row">
+      <span class="sort-label">Sort</span>
+      <button class="sort-btn active desc" id="dsort-ts" onclick="setDashSort('tsNumber', this)">TS #</button>
+      <button class="sort-btn" id="dsort-film" onclick="setDashSort('film', this)">Film</button>
+      <button class="sort-btn" id="dsort-record" onclick="setDashSort('recordDate', this)">Record Date</button>
+      <button class="sort-btn" id="dsort-air" onclick="setDashSort('airDate', this)">Air Date</button>
     </div>
     <p class="recent-header">Recent segments</p>
     <div id="recent-list"><div class="empty-state"><div class="loading-spinner"></div></div></div>
@@ -866,6 +928,13 @@
 
   <!-- ── ARCHIVE ── -->
   <div class="view" id="view-archive">
+    <div class="sort-row" id="archive-sort-row">
+      <span class="sort-label">Sort</span>
+      <button class="sort-btn active desc" id="asort-ts" onclick="setArchiveSort('tsNumber', this)">TS #</button>
+      <button class="sort-btn" id="asort-film" onclick="setArchiveSort('film', this)">Film</button>
+      <button class="sort-btn" id="asort-record" onclick="setArchiveSort('recordDate', this)">Record Date</button>
+      <button class="sort-btn" id="asort-air" onclick="setArchiveSort('airDate', this)">Air Date</button>
+    </div>
     <div class="archive-controls">
       <input type="text" class="search-input" placeholder="Search film, topic, true story..." id="archive-search" oninput="filterArchive()">
       <select class="filter-select" id="archive-filter" onchange="filterArchive()">
@@ -958,7 +1027,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1171,6 +1240,54 @@ function clearForm() {
 }
 
 // ── DASHBOARD ──
+let dashSortField = 'tsNumber';
+let dashSortDir = 'desc';
+let archiveSortField = 'tsNumber';
+let archiveSortDir = 'desc';
+
+function setDashSort(field, btn) {
+  if (dashSortField === field) {
+    dashSortDir = dashSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    dashSortField = field;
+    dashSortDir = 'desc';
+  }
+  document.querySelectorAll('#dash-sort-row .sort-btn').forEach(b => {
+    b.classList.remove('active','asc','desc');
+  });
+  btn.classList.add('active', dashSortDir);
+  renderDashboard();
+}
+
+function setArchiveSort(field, btn) {
+  if (archiveSortField === field) {
+    archiveSortDir = archiveSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    archiveSortField = field;
+    archiveSortDir = 'desc';
+  }
+  document.querySelectorAll('#archive-sort-row .sort-btn').forEach(b => {
+    b.classList.remove('active','asc','desc');
+  });
+  btn.classList.add('active', archiveSortDir);
+  filterArchive();
+}
+
+function sortSegments(segments, field, dir) {
+  return [...segments].sort((a, b) => {
+    let av = a[field], bv = b[field];
+    if (field === 'tsNumber') {
+      av = av || 0; bv = bv || 0;
+      return dir === 'desc' ? bv - av : av - bv;
+    }
+    av = (av || '').toLowerCase();
+    bv = (bv || '').toLowerCase();
+    if (av < bv) return dir === 'desc' ? 1 : -1;
+    if (av > bv) return dir === 'desc' ? -1 : 1;
+    return 0;
+  });
+}
+
 function renderDashboard() {
   const segments = window._allSegments || [];
   const published = segments.filter(s => s.status === 'published');
@@ -1182,16 +1299,19 @@ function renderDashboard() {
   document.getElementById('stat-latest').textContent = latest !== '—' ? 'TS-' + latest : '—';
 
   const list = document.getElementById('recent-list');
-  const recent = segments.slice(0, 10);
-  if (!recent.length) {
+  const sorted = sortSegments(segments, dashSortField, dashSortDir).slice(0, 15);
+  if (!sorted.length) {
     list.innerHTML = '<div class="empty-state"><p>No segments yet. Add your first one.</p></div>';
     return;
   }
-  list.innerHTML = recent.map(s => `
+  list.innerHTML = sorted.map(s => `
     <div class="recent-item" onclick="openModal('${s.id}')">
       <span class="recent-num">${s.tsNumber ? 'TS-' + s.tsNumber : '—'}</span>
       <span class="recent-film">${esc(s.film)}</span>
-      <span class="recent-date">${formatDate(s.airDate)}</span>
+      <div class="recent-dates">
+        <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
+        <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+      </div>
     </div>
   `).join('');
 }
@@ -1204,11 +1324,13 @@ function filterArchive() {
   const f = document.getElementById('archive-filter')?.value || 'all';
   const segments = window._allSegments || [];
 
-  const filtered = segments.filter(s => {
+  const base = segments.filter(s => {
     if (f !== 'all' && s.status !== f) return false;
     if (!q) return true;
     return ['film','topic','trueStory','fullText'].some(k => (s[k] || '').toLowerCase().includes(q));
   });
+
+  const filtered = sortSegments(base, archiveSortField, archiveSortDir);
 
   const list = document.getElementById('archive-list');
   if (!filtered.length) {
@@ -1220,7 +1342,10 @@ function filterArchive() {
       <div class="card-header">
         <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
         <span class="card-film">${esc(s.film)}<span class="card-status status-${s.status}">${s.status}</span></span>
-        <span class="card-date">${formatDate(s.airDate)}</span>
+        <div class="recent-dates">
+          <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
+          <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+        </div>
       </div>
       ${s.topic ? `<div class="card-topic">${esc(s.topic)}</div>` : ''}
       ${s.trueStory ? `<div class="card-truth">${esc(s.trueStory)}</div>` : ''}
