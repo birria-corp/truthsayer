@@ -2,7 +2,7 @@
 
 A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). Each week, two plausible fictions and one true fact — the audience finds the truth.
 
-**Version:** 2.0
+**Version:** 2.5
 **Live:** https://birria-corp.github.io/truthsayer/
 
 ---
@@ -19,6 +19,7 @@ A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). E
 
 | Version | Changes |
 |---------|---------|
+| v2.5 | Fixed ADMIN_UIDS typo (O→0) blocking admin access; fixed sign-out using wrong auth check; switched sign-in from popup to redirect (COOP fix) |
 | v2.0 | Library tab replaces Dashboard + Archive. Redesigned segment cards. |
 | v1.9 | Bulk Import/Batch Edit toggle in one collapsible section |
 | v1.8 | Modal edit mode, Segment Builder rename, auto-increment episode number, segmentId |
@@ -79,7 +80,7 @@ truthsayer/
 ├── index.html          — PWA app (all CSS + JS inline)
 ├── sw.js               — Service worker
 ├── manifest.json       — PWA manifest
-├── version.json        — { "version": "2.0" }
+├── version.json        — { "version": "2.5" }
 ├── icon.png            — App icon / tab favicon
 ├── logo-dashboard.jpg  — Library hero image
 ├── README.md

@@ -1090,7 +1090,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v2.4</span>
+    <span class="header-version">v2.5</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -1467,8 +1467,8 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.4';
-  const ADMIN_UIDS = ['7svXyOVugrT0LgK33R82eHqKp6f2'];
+const APP_VERSION = '2.5';
+  const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
 function updateAuthUI(user) {
@@ -1490,18 +1490,10 @@ function updateAuthUI(user) {
 }
 
 function handleAuthClick() {
-  if (isAdmin()) {
+  if (window._currentUser) {
     window._signOut(window._auth).then(() => toast('Signed out'));
   } else {
-    window._signInWithPopup(window._auth, window._provider)
-      .then(() => toast('Signed in'))
-      .catch(err => {
-        if (err.code === 'auth/popup-blocked') {
-          window._signInWithRedirect(window._auth, window._provider);
-        } else {
-          toast('Sign-in failed: ' + err.message);
-        }
-      });
+    window._signInWithRedirect(window._auth, window._provider);
   }
 }
 
