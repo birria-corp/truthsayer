@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'truthsayer-v2.4b';
+const CACHE_VERSION = 'truthsayer-v2.5';
 const NETWORK_FIRST = ['index.html', 'version.json'];
 
 self.addEventListener('install', e => {
