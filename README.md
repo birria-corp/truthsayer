@@ -7,7 +7,7 @@ A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). E
 
 ---
 
-## What's New in v2.0
+## What's New in v2.5
 
 - Dashboard and Archive consolidated into a single **Library** tab
 - Library hero row: logo, Frank Herbert quote, segment count — all in one borderless row
@@ -19,7 +19,11 @@ A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). E
 
 | Version | Changes |
 |---------|---------|
-| v2.5 | Fixed ADMIN_UIDS typo (O→0) blocking admin access; fixed sign-out using wrong auth check; switched sign-in from popup to redirect (COOP fix) |
+| v2.5 | Fixed ADMIN_UIDS UID typo (O→0) blocking admin access; fixed sign-out using wrong auth check; switched sign-in from popup to redirect (COOP fix); bumped sw.js cache version |
+| v2.4 | Admin-only Segment Builder tab; ADMIN_UIDS constant; Segment Builder and edit/delete/export gated to admin UID; Truthsayer logo as app icon (icon.png) |
+| v2.3 | Truthsayer artwork logo replaces placeholder icon — tab favicon, PWA install, home screen, Chrome tag |
+| v2.2 | Scheduled status added; Coming Soon cards for signed-out users; draft segments hidden from public; auto-publish when airDate passes; Firestore query filters drafts client-side |
+| v2.1 | Export Library JSON button in Segment Builder — exports full Firestore collection as dated JSON for bulk edit workflows |
 | v2.0 | Library tab replaces Dashboard + Archive. Redesigned segment cards. |
 | v1.9 | Bulk Import/Batch Edit toggle in one collapsible section |
 | v1.8 | Modal edit mode, Segment Builder rename, auto-increment episode number, segmentId |

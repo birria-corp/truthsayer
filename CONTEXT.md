@@ -1,10 +1,8 @@
 # Claude Session Context — The Truthsayer
-> Paste as first message in a new chat to resume immediately.
-
----
 
 ## Who I Am
-- **Name:** birria (Escape Hatch Discord handle)
+- **Name:** Doctor (Spencer Thompson) — goes by "Birria" in some contexts
+- **GitHub account:** `birria-corp`
 - **Claude goes by:** Fez
 
 ---
@@ -12,121 +10,127 @@
 ## This Project
 
 - **Name:** The Truthsayer
-- **Type:** Writing
-- **Goal:** Write weekly Truthsayer segments for the nerd movie podcast Escape Hatch
-- **Status:** Active — ongoing weekly production
-- **Repo:** https://github.com/spencer-thompson-2-vu/truthsayer
+- **Type:** PWA App + Weekly Podcast Segment Production
+- **Goal:** Manage and produce the Truthsayer segment for the Escape Hatch podcast
+- **Status:** Active
+- **Repo:** https://github.com/birria-corp/truthsayer
 - **Live URL:** https://birria-corp.github.io/truthsayer/
-- **Stack:** Markdown, no code
+- **Current version:** v2.5
+- **Stack:** Single-file HTML, vanilla JS, Firebase Firestore + Auth, GitHub Pages
 
 ---
 
-## What This Is
+## Current State
 
-The Truthsayer is a recurring segment on Escape Hatch. Each week: two plausible fictions and one true fact, tied to the film being discussed. The audience identifies the truth. Grandmaster writes final versions; Fez generates topic angles, researches true facts, generates false story options, and drafts full segments for Grandmaster to revise.
+### Library
+- **158 segments** in Firestore — TS 1–158, fully normalized and audited
+- TS numbers increase with episode numbers — no gaps, no duplicates, no ordering issues
+- TS 14–29 gap is intentional — episodes in that range had no recorded Truthsayer segment
+- Two Dune Part 2 segments share ep 185 (TS 47 and TS 48)
+- Dark Knight (TS-158, ep 319) is status: scheduled, air date Aug 23 2026
 
----
+### Auth / Admin
+- Google sign-in via Firebase Auth
+- Admin UID: `7svXy0VugrT0LgK33R82eHqKp6f2` (zeros at positions 6 and 12, not letter O)
+- ADMIN_UIDS array in index.html — add future admins here
+- Segment Builder tab hidden from non-admins
+- Edit/delete/export gated to admin
 
-## Segment Format (Fixed)
-
-1. Short intro (2–4 sentences) tying topic to film
-2. Setup line
-3. **"Time for the Truthsayer."**
-4. Numbered entries — two false, one true (or variant format)
-5. **"Alright — which of these [X] stories is true?"**
-6. Clean reveal
-7. Brief explanation (2–4 punchy lines max)
-8. Thematic closer — film dialogue, quote, or dry callback to reveal image
-9. **"Here ends the Truthsayer."**
-
----
-
-## Hard Rules
-
-- **90–120 seconds / 225–300 words. Hard limit.**
-- False entries: 1–2 tight sentences, no trailing explanation
-- Reveal: short — trust the image, don't over-explain
-- "Alright — which of these [X] stories is true?" — always include before reveal
-- "Here ends the Truthsayer." — fixed closing line (rare exceptions: Latin for O Brother)
-- Closer must callback specific image from reveal, not restate theme
-- Film dialogue as closer strongly preferred over constructed lines
-- Dry anachronistic commentary fair game ("We used to be a real country")
-- Personal asides welcome but brief
-- Never reach for poetic when a shorter punch works
+### Visibility Model
+- `published` — full card, clickable, visible to all
+- `scheduled` — Coming Soon card (title + air date only) for signed-out users; full card for admin; auto-promotes to published display when airDate passes
+- `draft` — hidden from public entirely; visible to admin only
 
 ---
 
-## Structural Variants
+## Active Features
 
-| Variant | Description |
-|---------|-------------|
-| Standard | 3 entries, 2 false 1 true |
-| List — find the false | 5+ entries, find the one she wasn't in (ET/Dee Wallace) |
-| List — find the true | 5+ entries, find who didn't work with X (Adaptation/Spike Jonze) |
-| All true | All 3 turn out true — used sparingly (Pulp Fiction, Casablanca) |
-| Count format | Guess a specific number (Goonies) |
-| Trivia race | Real things competing (Batman & Robin/Coolio ratings) |
+- **The Library tab** — hero row (logo, Frank Herbert quote, segment count), search, filter, sort, segment cards
+- **Segment cards** — Ep# above TS# (left), film + topic inline (center), Rec/Air dates + status (right)
+- **Modal** — full segment detail; Edit button flips to inline edit mode for admin
+- **Segment Builder tab** (admin only) — new segment form with auto-increment episode#, live segmentId preview, record date + air date fields, JSON import
+- **Bulk Import / Batch Edit** — collapsible toggle section; Import New skips duplicates by tsNumber; Batch Edit matches by `_matchTs` field and merges updates
+- **Export Library JSON** — downloads full Firestore collection sorted by TS# as dated JSON
 
 ---
 
-## Workflow
+## Key Technical Decisions
 
-1. Grandmaster brings a film
-2. Fez generates 6–8 topic angle options with recommendations
-3. Grandmaster selects angle
-4. Fez researches and surfaces true fact candidates (verified where possible)
-5. Grandmaster selects true story
-6. Fez generates 7–10 false story options
-7. Grandmaster selects two false stories
-8. Fez drafts full segment
-9. Grandmaster revises to final voice — final version is authoritative tone reference
-10. Fez notes key tone/structure differences for future calibration
+### Version Bumping (all 3 simultaneously)
+- `APP_VERSION` constant in index.html
+- `version.json`
+- `CACHE_VERSION` in sw.js
 
----
+### segmentId format
+- `ep-{episodeNumber}-{film-slug}` when episode number present
+- Falls back to `ts-{tsNumber}-{film-slug}`
 
-## Tone Reference — Final Version Benchmarks
+### Batch Edit `_matchTs`
+- Batch edit tool matches on `_matchTs` field if present, falls back to `tsNumber`
+- `_matchTs` and `_old_ts` fields stripped before writing to Firestore
 
-- *"We used to be a real country."* — Barton Fink (dry, anachronistic, earned)
-- *"Hey, if you got that wrong, if you got that right. . . It happens all the time."* — Eyes Wide Shut (Ziegler film quote as closer)
-- *"Lester Bangs knew that. He had the tapes to prove it."* — Almost Famous (callback to specific reveal image)
-- *"Thanks for your service Coolio."* — Batman & Robin (affectionate, short, perfect)
-- *"Everett would have been furious. Delmar would have had no idea what he was saying."* — O Brother (film character callback)
-- *"And that is all from me. / A man of many turns. / A trickster. / But never a teller of falsehoods."* — The Odyssey (thematic exception)
+### Firestore Rules
+- Public: `allow read: if true`
+- Write: `allow write: if request.auth.uid == '7svXy0VugrT0LgK33R82eHqKp6f2'`
+
+### Skip Episodes (no Truthsayer segment)
+138, 183, 186, 197, 198, 227, 228, 235, 239, 241, 243, 245, 247, 249, 251, 253, 254, 262, 263, 274, 276, 284, 288, 289, 296, 312
 
 ---
 
-## False Story Guidelines
+## Segment Data Model
 
-- Era-appropriate, realistic, no obvious absurdity
-- Should feel more plausible than the true story where possible
-- Avoid accidentally grazing real facts — flag if uncertain
-- Best fakes connect thematically to true story (harder to distinguish)
-- Generate 7–10 options; flag top two recommended pairings
-- Google Docs/Drive access consistently fails — request direct text paste
-
----
-
-## Recent Segments (Last 10)
-
-| TS# | Film | Air Date | True Story |
-|-----|------|----------|------------|
-| 161 | The Dark Knight | 2026-08-15 (est) | Vidal Sassoon cut Caine's hair before either was famous |
-| 160 | E.T. the Extra-Terrestrial | 2026-08-07 | Find the film Dee Wallace wasn't in — Pumpkinhead |
-| 159 | Barton Fink | 2026-08-02 | World's largest Underwood typewriter at Atlantic City; scrapped for war metal |
-| 158 | The Odyssey | 2026-07-22 | Elliot Page juggles — learned from loneliness on film sets |
-| 157 | O Brother, Where Art Thou? | 2026-07-17 | Tim Blake Nelson delivered Brown commencement address in Latin, 1986 |
-| 156 | Star Trek VI | 2026-07-12 | Roddenberry deadheading on Pan Am crash in Syrian desert 1947; rescued Maharani of Phaltan |
-| 155 | Eternal Sunshine | 2026-07-05 | Kate Winslet married Ned Rocknroll, nephew of Richard Branson |
-| — | The Secret of NIMH | 2026-06-05 | Don Bluth hired DeLuise to stop Reynolds using a terrible dog voice |
-| — | Eyes Wide Shut | 2026-05-28 | Pollack sued Danish TV over pan-and-scan; lost on technicality |
-| — | Almost Famous | 2026-05-24 | Lester Bangs snuck into Electric Lady Studios April Fool's Day 1979 |
-
-Full archive: see `LOG.md` and `archive/` folder.
+```json
+{
+  "tsNumber": 158,
+  "episodeNumber": 319,
+  "segmentId": "ep-319-the-dark-knight-2008",
+  "recordDate": "2026-08-18",
+  "airDate": "2026-08-23",
+  "film": "The Dark Knight (2008)",
+  "topic": "True story from Michael Caine's lean years before fame",
+  "variant": "standard",
+  "entries": [{"text": "...", "isTrue": false}],
+  "trueStory": "...",
+  "closer": "...",
+  "fullText": "...",
+  "status": "scheduled",
+  "authorUid": "...",
+  "createdAt": "...",
+  "updatedAt": "..."
+}
+```
 
 ---
 
-## Next Steps
+## Version History
 
-- Continue weekly segment production
-- Next film TBD — bring the film, Fez generates angle options
-- Update LOG.md and archive/ after each finalized segment
+| Version | Changes |
+|---------|---------|
+| v2.5 | Fixed ADMIN_UIDS UID typo (O→0); fixed sign-out auth check; switched to signInWithRedirect |
+| v2.4 | Admin-only Segment Builder; ADMIN_UIDS constant; Truthsayer logo as app icon |
+| v2.3 | Truthsayer artwork logo as icon.png |
+| v2.2 | Scheduled status; Coming Soon cards; draft hidden from public; auto-publish by airDate |
+| v2.1 | Export Library JSON in Segment Builder |
+| v2.0 | Library tab replaces Dashboard + Archive; redesigned segment cards |
+| v1.9 | Bulk Import/Batch Edit toggle |
+| v1.8 | Modal edit mode; Segment Builder rename; auto-increment episode#; segmentId |
+| v1.7 | Dashboard logo; Frank Herbert quote |
+| v1.6 | Archive hides answers; modal shows full text first |
+| v1.5 | Sort controls; dual date display |
+| v1.4 | Duplicate check; auto-clear on bulk import |
+| v1.3 | Drag-and-drop bulk import |
+| v1.2 | 20% UI scale; JSON import for form |
+| v1.1 | PWA with Firebase; dashboard; archive; segment builder |
+| v1.0 | Static GitHub Pages archive |
+
+---
+
+## Deployment Workflow
+
+GitHub Desktop → Pull origin → copy files into repo folder → Commit with version message → Push origin → GitHub Pages auto-deploys (~2 min)
+
+## Source Files for Segment Archive
+- `Truthsayer.txt` — full segment archive, newest first
+- `EH_Ep_Numbers_and_dates.csv` — authoritative episode numbers and air dates
+- Both TS numbers and episode numbers increase over time; lower = older
