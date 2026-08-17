@@ -1467,7 +1467,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.6';
   const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
@@ -1489,11 +1489,27 @@ function updateAuthUI(user) {
   }
 }
 
+function isMobile() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 function handleAuthClick() {
   if (window._currentUser) {
     window._signOut(window._auth).then(() => toast('Signed out'));
-  } else {
+  } else if (isMobile()) {
+    // Mobile: redirect works better, avoids popup blockers
     window._signInWithRedirect(window._auth, window._provider);
+  } else {
+    // Desktop: popup works better, redirect fails on GitHub Pages / Chrome COOP
+    window._signInWithPopup(window._auth, window._provider)
+      .catch(err => {
+        if (err.code === 'auth/popup-blocked') {
+          // Fallback to redirect if popup is blocked
+          window._signInWithRedirect(window._auth, window._provider);
+        } else if (err.code !== 'auth/popup-closed-by-user') {
+          toast('Sign-in failed: ' + err.message);
+        }
+      });
   }
 }
 
