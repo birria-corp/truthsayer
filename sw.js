@@ -1,11 +1,11 @@
-const CACHE_VERSION = 'truthsayer-v2.7';
-const NETWORK_FIRST = ['index.html', 'version.json'];
+const CACHE_VERSION = 'truthsayer-v2.7b';
+const NETWORK_FIRST = ['index.html', 'version.json', 'sw.js'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_VERSION).then(cache =>
-      cache.addAll(['/', '/index.html', '/manifest.json', '/icon.png'])
+      cache.addAll(['/truthsayer/', '/truthsayer/index.html', '/truthsayer/manifest.json', '/truthsayer/icon.png'])
     )
   );
 });
@@ -20,11 +20,14 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  const isNetworkFirst = NETWORK_FIRST.some(f => url.pathname.endsWith(f)) || url.pathname === '/';
+  // Always network-first for HTML, version check, and sw itself
+  const isNetworkFirst = NETWORK_FIRST.some(f => url.pathname.endsWith(f)) 
+    || url.pathname === '/truthsayer/'
+    || url.pathname === '/truthsayer';
 
   if (isNetworkFirst) {
     e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+      fetch(e.request, { cache: 'no-store' }).catch(() => caches.match(e.request))
     );
   } else {
     e.respondWith(
