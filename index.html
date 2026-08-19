@@ -1606,7 +1606,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.8';
   const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
@@ -2274,11 +2274,8 @@ function toggleExport() {
 async function exportLibrary() {
   if (!window._currentUser) { toast('Sign in to export'); return; }
 
-  const btn = document.getElementById('export-btn');
-  const status = document.getElementById('export-status');
-  btn.disabled = true;
-  btn.textContent = 'Exporting...';
-  status.textContent = '';
+  const btn = document.getElementById('settings-export-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Exporting...'; }
 
   try {
     const snap = await window._getDocs(
@@ -2288,7 +2285,6 @@ async function exportLibrary() {
     const segments = [];
     snap.forEach(d => {
       const data = d.data();
-      // Strip server-generated fields, keep all content fields
       const { authorUid, authorEmail, createdAt, updatedAt, ...exportData } = data;
       segments.push(exportData);
     });
@@ -2305,14 +2301,11 @@ async function exportLibrary() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    status.textContent = segments.length + ' segments exported.';
-    toast('Library exported ✓');
+    toast('Library exported — ' + segments.length + ' segments ✓');
   } catch(e) {
-    status.textContent = 'Export failed: ' + e.message;
-    toast('Export failed');
+    toast('Export failed: ' + e.message);
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Download Library JSON';
+    if (btn) { btn.disabled = false; btn.textContent = 'Download'; }
   }
 }
 
