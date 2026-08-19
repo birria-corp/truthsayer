@@ -1588,11 +1588,13 @@ onAuthStateChanged(auth, user => {
 
 window._loadSegments = async function() {
   try {
-    const q = query(collection(db, 'segments'), orderBy('tsNumber', 'asc'));
-    const snap = await getDocs(q);
+    // Fetch all without orderBy to avoid index requirement; sort client-side
+    const snap = await getDocs(collection(db, 'segments'));
     const all = [];
     snap.forEach(d => all.push({ id: d.id, ...d.data() }));
-    // Filter drafts for non-admins — window.isAdminUser set by regular script
+    // Sort by tsNumber ascending client-side
+    all.sort((a, b) => (a.tsNumber || 0) - (b.tsNumber || 0));
+    // Filter drafts for non-admins
     if (window.isAdminUser && window.isAdminUser()) {
       window._allSegments = all;
     } else {
@@ -2278,9 +2280,7 @@ async function exportLibrary() {
   if (btn) { btn.disabled = true; btn.textContent = 'Exporting...'; }
 
   try {
-    const snap = await window._getDocs(
-      window._query(window._collection(window._db, 'segments'), window._orderBy('tsNumber', 'asc'))
-    );
+    const snap = await window._getDocs(window._collection(window._db, 'segments'));
 
     const segments = [];
     snap.forEach(d => {
@@ -2288,6 +2288,7 @@ async function exportLibrary() {
       const { authorUid, authorEmail, createdAt, updatedAt, ...exportData } = data;
       segments.push(exportData);
     });
+    segments.sort((a, b) => (a.tsNumber || 0) - (b.tsNumber || 0));
 
     const json = JSON.stringify(segments, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
