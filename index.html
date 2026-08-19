@@ -1082,6 +1082,109 @@
   .nav-tab.admin-only { display: none; }
   .nav-tab.admin-only.visible { display: inline-block; }
 
+
+  /* ── SETTINGS PANEL ── */
+  .settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 360px;
+    max-width: 100vw;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border2);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(0);
+    transition: transform 0.25s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+  }
+
+  .settings-panel.hidden {
+    transform: translateX(100%);
+    pointer-events: none;
+  }
+
+  .settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+
+  .settings-overlay.hidden { display: none; }
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .settings-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
+
+  .settings-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+  }
+
+  .settings-close:hover { color: var(--text); }
+
+  .settings-section {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .settings-section-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    margin-bottom: 0.875rem;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .settings-row-info { flex: 1; }
+
+  .settings-row-title {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+  }
+
+  .settings-row-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  #settings-btn {
+    font-size: 1.1rem;
+    padding: 0.25rem 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+  }
+
+  #settings-btn:hover { opacity: 1; }
+
 </style>
 </head>
 <body>
@@ -1094,6 +1197,7 @@
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
+    <button class="btn btn-ghost btn-sm" id="settings-btn" onclick="toggleSettings()" style="display:none" title="Settings">⚙</button>
     <button class="btn btn-ghost btn-sm" id="auth-btn" onclick="handleAuthClick()">Sign in</button>
   </div>
 </header>
@@ -1104,6 +1208,49 @@
 </nav>
 
 <main id="app-main">
+
+
+  <!-- SETTINGS PANEL (admin only) -->
+  <div id="settings-panel" class="settings-panel hidden">
+    <div class="settings-header">
+      <span class="settings-title">Settings</span>
+      <button class="settings-close" onclick="toggleSettings()">✕</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-label">App</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">Version</div>
+          <div class="settings-row-sub" id="settings-version-text">v2.7 — checking for updates...</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="update-btn" onclick="checkForUpdates()">Check for Updates</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-label">Data</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">Export Library JSON</div>
+          <div class="settings-row-sub">Download all segments as a dated JSON file</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="settings-export-btn" onclick="exportLibrary()">Download</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-label">Account</div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-title">Signed in as</div>
+          <div class="settings-row-sub" id="settings-email">—</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="handleAuthClick();toggleSettings()">Sign out</button>
+      </div>
+    </div>
+  </div>
+  <div id="settings-overlay" class="settings-overlay hidden" onclick="toggleSettings()"></div>
 
   <!-- ── LIBRARY (combined dashboard + archive) ── -->
   <div class="view active" id="view-dashboard">
@@ -1287,20 +1434,6 @@
       </div>
     </div>
 
-    <!-- LIBRARY EXPORT -->
-    <div class="bulk-import-section" id="export-section" style="margin-bottom:1.75rem">
-      <button class="bulk-toggle" onclick="toggleExport()" id="export-toggle-btn">
-        ▶ Export Library JSON
-      </button>
-      <div class="bulk-body hidden" id="export-body">
-        <p class="bulk-hint">Export all segments from Firestore as a JSON file. Use this to make bulk edits locally, then re-import via Batch Edit mode above.</p>
-        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" id="export-btn" onclick="exportLibrary()">Download Library JSON</button>
-          <span id="export-status" style="font-size:0.82rem;color:var(--muted)"></span>
-        </div>
-      </div>
-    </div>
-
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
       <div class="form-actions-spacer"></div>
@@ -1467,7 +1600,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.7';
   const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
@@ -2024,6 +2157,72 @@ async function deleteSegment(id) {
 }
 
 function loadSegments() { if (window._loadSegments) window._loadSegments(); }
+
+// ── SETTINGS PANEL ──
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  const overlay = document.getElementById('settings-overlay');
+  const isHidden = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !isHidden);
+  overlay.classList.toggle('hidden', !isHidden);
+  if (isHidden) checkVersionDisplay();
+}
+
+function checkVersionDisplay() {
+  const el = document.getElementById('settings-version-text');
+  if (!el) return;
+  fetch('version.json?t=' + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      const server = data.version;
+      if (server && server !== APP_VERSION) {
+        el.innerHTML = `v${APP_VERSION} — <span style="color:var(--gold)">v${server} available</span>`;
+      } else {
+        el.textContent = `v${APP_VERSION} — up to date ✓`;
+      }
+    })
+    .catch(() => { el.textContent = `v${APP_VERSION}`; });
+}
+
+async function checkForUpdates() {
+  const btn = document.getElementById('update-btn');
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+
+  try {
+    const res = await fetch('version.json?t=' + Date.now());
+    const data = await res.json();
+    const server = data.version;
+
+    if (!server || server === APP_VERSION) {
+      btn.textContent = 'Up to date ✓';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Check for Updates'; }, 2000);
+      return;
+    }
+
+    btn.textContent = 'Updating...';
+
+    // Unregister service workers
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+
+    // Clear all caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+
+    toast('Updated to v' + server + ' — reloading...');
+    setTimeout(() => location.reload(true), 1000);
+
+  } catch(e) {
+    btn.textContent = 'Check failed';
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Check for Updates'; }, 2000);
+  }
+}
+
 // ── LIBRARY EXPORT ──
 function toggleExport() {
   const body = document.getElementById('export-body');
