@@ -1582,18 +1582,23 @@ getRedirectResult(auth).catch(() => {});
 
 onAuthStateChanged(auth, user => {
   window._currentUser = user;
-  updateAuthUI(user);
-  loadSegments();
+  // Call into regular script scope where ADMIN_UIDS is defined
+  if (window.onAuthReady) window.onAuthReady(user);
 });
 
 window._loadSegments = async function() {
   try {
-    const q = query(collection(db, 'segments'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'segments'), orderBy('tsNumber', 'asc'));
     const snap = await getDocs(q);
-    window._allSegments = [];
-    snap.forEach(d => window._allSegments.push({ id: d.id, ...d.data() }));
+    const all = [];
+    snap.forEach(d => all.push({ id: d.id, ...d.data() }));
+    // Filter drafts for non-admins — window.isAdminUser set by regular script
+    if (window.isAdminUser && window.isAdminUser()) {
+      window._allSegments = all;
+    } else {
+      window._allSegments = all.filter(s => s.status === 'published' || s.status === 'scheduled');
+    }
     renderDashboard();
-    renderArchive();
   } catch(e) {
     console.error('Load error', e);
   }
@@ -1610,17 +1615,37 @@ function updateAuthUI(user) {
   const userEl = document.getElementById('auth-user');
   const banner = document.getElementById('auth-banner');
   const tabNew = document.getElementById('tab-new');
+  const settingsBtn = document.getElementById('settings-btn');
+  const userIsAdmin = user && ADMIN_UIDS.includes(user.uid);
+
   if (user) {
     btn.textContent = 'Sign out';
     userEl.textContent = user.email;
     if (banner) banner.style.display = 'none';
-    tabNew.style.opacity = '1';
   } else {
     btn.textContent = 'Sign in';
     userEl.textContent = '';
     if (banner) banner.style.display = 'flex';
-    tabNew.style.opacity = '0.5';
   }
+
+  // Admin-only UI
+  if (tabNew) {
+    if (userIsAdmin) {
+      tabNew.classList.add('visible');
+    } else {
+      tabNew.classList.remove('visible');
+      if (document.getElementById('view-new-segment')?.classList.contains('active')) {
+        showView('dashboard');
+      }
+    }
+  }
+  if (settingsBtn) {
+    settingsBtn.style.display = userIsAdmin ? 'inline-block' : 'none';
+  }
+
+  // Update settings panel email
+  const emailEl = document.getElementById('settings-email');
+  if (emailEl) emailEl.textContent = user ? user.email : '—';
 }
 
 function isMobile() {
@@ -1789,7 +1814,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('input', updateSegmentIdPreview);
   });
 
-  if (window._loadSegments) window._loadSegments();
+  // Segments loaded via onAuthReady after auth state resolves
 });
 
 function setDefaultDate() {
@@ -1908,6 +1933,14 @@ function renderArchive() { filterArchive(); }
 function isAdmin() {
   return !!(window._currentUser && ADMIN_UIDS.includes(window._currentUser.uid));
 }
+
+// Exposed to module scope
+window.isAdminUser = isAdmin;
+
+window.onAuthReady = function(user) {
+  updateAuthUI(user);
+  // Segments loaded via onAuthReady after auth state resolves
+};
 
 function isEffectivelyPublished(s) {
   // Scheduled segments with a past airDate are treated as published for public view
