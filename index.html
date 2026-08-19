@@ -1608,7 +1608,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.8';
+const APP_VERSION = '2.9';
   const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
@@ -1941,7 +1941,7 @@ window.isAdminUser = isAdmin;
 
 window.onAuthReady = function(user) {
   updateAuthUI(user);
-  // Segments loaded via onAuthReady after auth state resolves
+  if (window._loadSegments) window._loadSegments();
 };
 
 function isEffectivelyPublished(s) {
