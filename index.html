@@ -1194,7 +1194,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version">v2.5</span>
+    <span class="header-version" id="app-version-display">v2.7</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -1765,6 +1765,10 @@ function updateWordCount() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Sync header version display with APP_VERSION constant
+  const vEl = document.getElementById('app-version-display');
+  if (vEl) vEl.textContent = 'v' + APP_VERSION;
+
   initEntries();
   setDefaultDate();
   document.getElementById('f-fulltext').addEventListener('input', updateWordCount);
