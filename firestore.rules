@@ -2,12 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /segments/{segmentId} {
-      // Public can read published and scheduled segments only
-      allow read: if resource.data.status == 'published'
-                  || resource.data.status == 'scheduled'
-                  || request.auth.uid == 'YOUR_ADMIN_UID';
-      // Only admin can write
-      allow write: if request.auth.uid == 'YOUR_ADMIN_UID';
+      allow read: if true;
+      allow write: if request.auth.uid == 'ZbRaWy2Ld5MPG0AtzyElphKWUiZ2';
     }
   }
 }
