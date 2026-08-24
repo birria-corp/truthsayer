@@ -1705,7 +1705,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
   const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
@@ -1728,12 +1728,23 @@ function updateAuthUI(user) {
   }
 
   // Admin-only UI
+  const tabArchive = document.getElementById('tab-archive');
   if (tabNew) {
     if (userIsAdmin) {
       tabNew.classList.add('visible');
     } else {
       tabNew.classList.remove('visible');
       if (document.getElementById('view-new-segment')?.classList.contains('active')) {
+        showView('dashboard');
+      }
+    }
+  }
+  if (tabArchive) {
+    if (userIsAdmin) {
+      tabArchive.classList.add('visible');
+    } else {
+      tabArchive.classList.remove('visible');
+      if (document.getElementById('view-archive')?.classList.contains('active')) {
         showView('dashboard');
       }
     }
