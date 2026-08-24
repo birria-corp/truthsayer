@@ -1186,6 +1186,102 @@
 
   #settings-btn:hover { opacity: 1; }
 
+
+  /* ── ARCHIVE FULL TEXT ── */
+  .archive-controls {
+    margin-bottom: 1rem;
+  }
+
+  .archive-full-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .archive-full-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+    gap: 1rem;
+  }
+
+  .archive-full-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .archive-full-film {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .archive-full-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .archive-full-text {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    line-height: 1.8;
+    color: var(--muted);
+    white-space: pre-wrap;
+    border-top: 1px solid var(--border);
+    padding-top: 0.875rem;
+    margin-top: 0.875rem;
+  }
+
+  /* ── GUESSING GAME (modal) ── */
+  .game-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .game-pill {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+  }
+
+  .game-pill:hover { border-color: var(--gold-dim); }
+  .game-pill.selected { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+  .game-pill.correct { background: #1a3a1a; border-color: #4caf50; color: #4caf50; }
+  .game-pill.wrong { background: #3a1a1a; border-color: #f44336; color: #f44336; }
+
+  .game-submit {
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+
+  .game-result {
+    display: none;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .game-result.show { display: block; }
+  .game-result.correct-result { border-color: #4caf50; background: #1a3a1a; color: #81c784; }
+  .game-result.wrong-result { border-color: #f44336; background: #3a1a1a; color: #e57373; }
+
 </style>
 </head>
 <body>
@@ -1206,6 +1302,7 @@
 <nav id="app-nav">
   <button class="nav-tab active" onclick="showView('dashboard')">The Library</button>
   <button class="nav-tab admin-only" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
+  <button class="nav-tab admin-only" onclick="showView('archive')" id="tab-archive">Archive</button>
 </nav>
 
 <main id="app-main">
@@ -1548,12 +1645,12 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRe
 import { getFirestore, collection, doc, addDoc, setDoc, getDocs, getDoc, deleteDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB2t-ZhuS7fx9PsxMBrlkHNJHS3ksjdYxI",
-  authDomain: "truthsayer-4c3ee.firebaseapp.com",
-  projectId: "truthsayer-4c3ee",
-  storageBucket: "truthsayer-4c3ee.firebasestorage.app",
-  messagingSenderId: "580802009161",
-  appId: "1:580802009161:web:c94f81e3cbd6acefe54798"
+  apiKey: "AIzaSyCrTmJNohK-7_t2BHx70HA6AfLmZyryLUY",
+  authDomain: "zeptrack-f8720.firebaseapp.com",
+  projectId: "zeptrack-f8720",
+  storageBucket: "zeptrack-f8720.firebasestorage.app",
+  messagingSenderId: "791166858370",
+  appId: "1:791166858370:web:9ccf77cdad85cb3689b09b"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -1608,7 +1705,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '2.9';
+const APP_VERSION = '3.0';
   const ADMIN_UIDS = ['7svXy0VugrT0LgK33R82eHqKp6f2'];
 
 // ── AUTH ──
@@ -1676,13 +1773,14 @@ function handleAuthClick() {
 
 // ── NAV ──
 function showView(id) {
-  if (id === 'new-segment' && !isAdmin()) return;
+  if ((id === 'new-segment' || id === 'archive') && !isAdmin()) return;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + id).classList.add('active');
-  const labels = ['dashboard', 'new-segment'];
+  const labels = ['dashboard', 'new-segment', 'archive'];
   document.querySelectorAll('.nav-tab')[labels.indexOf(id)]?.classList.add('active');
   if (id === 'new-segment') autoIncrementEpisode();
+  if (id === 'archive') renderArchiveFull();
 }
 
 function autoIncrementEpisode() {
@@ -2021,6 +2119,39 @@ function filterArchive() {
 }
 
 // ── MODAL ──
+
+// ── ARCHIVE FULL TEXT ──
+function renderArchiveFull() {
+  filterArchiveFull();
+}
+
+function filterArchiveFull() {
+  const q = (document.getElementById('archive-search-full')?.value || '').toLowerCase();
+  const segments = window._allSegments || [];
+  const filtered = segments.filter(s => {
+    if (!q) return true;
+    return ['film','topic','trueStory','fullText','closer'].some(k => (s[k] || '').toLowerCase().includes(q));
+  }).sort((a, b) => (b.tsNumber || 0) - (a.tsNumber || 0));
+
+  const list = document.getElementById('archive-full-list');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><p>No segments found.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(s => `
+    <div class="archive-full-card">
+      <div class="archive-full-header">
+        <div class="archive-full-meta">
+          <div class="archive-full-film">${esc(s.film)}</div>
+          <div class="archive-full-sub">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'} · Air ${formatDate(s.airDate)} · <span class="card-status status-${s.status}">${s.status}</span></div>
+        </div>
+      </div>
+      <div class="archive-full-text">${esc(s.fullText || 'No full text saved.')}</div>
+    </div>
+  `).join('');
+}
+
+// ── GUESSING GAME ──
 function openModal(id) {
   const s = (window._allSegments || []).find(x => x.id === id);
   if (!s) return;
@@ -2033,23 +2164,44 @@ function openModal(id) {
   document.getElementById('modal-film').textContent = s.film || '';
   document.getElementById('modal-meta').innerHTML =
     `${s.tsNumber ? 'TS-' + s.tsNumber : ''} ${s.episodeNumber ? '· Ep ' + s.episodeNumber : ''} · ${formatDate(s.recordDate) ? 'Rec ' + formatDate(s.recordDate) + ' · ' : ''}Air ${formatDate(s.airDate)} · ${s.variant || 'standard'} · <span class="card-status status-${s.status}">${s.status}</span>`;
-
   document.getElementById('modal-segment-id').textContent = s.segmentId || '';
 
+  // Build guessing game UI
   const entriesEl = document.getElementById('modal-entries');
-  entriesEl.innerHTML = (s.entries || []).map((e, i) => `
-    <div class="modal-entry ${e.isTrue ? 'true-entry' : ''}">
-      <span class="modal-entry-num">#${i+1}</span>
-      <span class="modal-entry-text">${esc(e.text)}${e.isTrue ? ' ✓' : ''}</span>
-    </div>
-  `).join('') || '<p style="color:var(--muted);font-size:0.9rem">No entries.</p>';
+  const isAdminUser = isAdmin();
 
-  document.getElementById('modal-truth').textContent = s.trueStory || '';
-  document.getElementById('modal-fulltext').textContent = s.fullText || 'No full text saved.';
+  if (isAdminUser) {
+    // Admin sees full entries with answers marked
+    entriesEl.innerHTML = (s.entries || []).map((e, i) => `
+      <div class="modal-entry ${e.isTrue ? 'true-entry' : ''}">
+        <span class="modal-entry-num">#${i+1}</span>
+        <span class="modal-entry-text">${esc(e.text)}${e.isTrue ? ' ✓' : ''}</span>
+      </div>
+    `).join('') || '<p style="color:var(--muted);font-size:0.9rem">No entries.</p>';
+  } else {
+    // Public gets guessing game
+    const entries = s.entries || [];
+    entriesEl.innerHTML = `
+      <div class="game-entries" id="game-entries-${id}">
+        ${entries.map((e, i) => `
+          <button class="game-pill" onclick="selectGamePill(this, ${i}, '${id}')" data-index="${i}">
+            <strong>#${i+1}</strong> — ${esc(e.text)}
+          </button>
+        `).join('')}
+      </div>
+      <button class="btn btn-primary game-submit" onclick="submitGuess('${id}')">Submit answer</button>
+      <div class="game-result" id="game-result-${id}"></div>
+    `;
+    window._gameState = window._gameState || {};
+    window._gameState[id] = { selected: null, submitted: false, entries };
+  }
+
+  document.getElementById('modal-truth').textContent = isAdminUser ? (s.trueStory || '') : '';
+  document.getElementById('modal-fulltext').textContent = isAdminUser ? (s.fullText || 'No full text saved.') : '';
 
   const actions = document.getElementById('modal-actions');
   actions.innerHTML = '';
-  if (isAdmin()) {
+  if (isAdminUser) {
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-secondary btn-sm';
     editBtn.textContent = 'Edit';
@@ -2071,6 +2223,42 @@ function openModal(id) {
 
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
+
+function selectGamePill(btn, index, segId) {
+  if (!window._gameState || !window._gameState[segId]) return;
+  if (window._gameState[segId].submitted) return;
+  document.querySelectorAll(`#game-entries-${segId} .game-pill`).forEach(p => p.classList.remove('selected'));
+  btn.classList.add('selected');
+  window._gameState[segId].selected = index;
+}
+
+function submitGuess(segId) {
+  const state = window._gameState && window._gameState[segId];
+  if (!state || state.submitted) return;
+  if (state.selected === null) { toast('Pick an answer first'); return; }
+
+  state.submitted = true;
+  const correct = state.entries[state.selected]?.isTrue;
+  const correctIndex = state.entries.findIndex(e => e.isTrue);
+  const s = (window._allSegments || []).find(x => x.id === segId);
+
+  // Style pills
+  const pills = document.querySelectorAll(`#game-entries-${segId} .game-pill`);
+  pills.forEach((p, i) => {
+    if (i === correctIndex) p.classList.add('correct');
+    else if (i === state.selected && !correct) p.classList.add('wrong');
+  });
+
+  // Show result
+  const resultEl = document.getElementById(`game-result-${segId}`);
+  if (resultEl) {
+    resultEl.className = 'game-result show ' + (correct ? 'correct-result' : 'wrong-result');
+    resultEl.innerHTML = correct
+      ? `<strong>That's right!</strong> ${esc(s?.trueStory || '')}`
+      : `<strong>Not quite.</strong> The true story was #${correctIndex + 1}. ${esc(s?.trueStory || '')}`;
+  }
+}
+
 
 function enterEditMode(s) {
   document.getElementById('modal').classList.add('editing');
