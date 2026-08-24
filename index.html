@@ -1452,9 +1452,9 @@
 
 <nav id="app-nav">
   <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard">The Library</button>
-  <button class="nav-tab admin-only" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
-  <button class="nav-tab admin-only" onclick="showView('archive')" id="tab-archive">Archive</button>
   <button class="nav-tab" onclick="showView('game')" id="tab-game">The Game</button>
+  <button class="nav-tab admin-only" onclick="showView('archive')" id="tab-archive">Archive</button>
+  <button class="nav-tab admin-only" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
 </nav>
 
 <main id="app-main">
@@ -1682,6 +1682,28 @@
 
 
 </main>
+
+
+  <!-- ── THE GAME ── -->
+  <div class="view" id="view-game">
+    <div class="game-view" id="game-landing" style="display:flex">
+      <button class="game-logo-btn" onclick="startGame()">
+        <img src="icon.png" alt="The Truthsayer" class="game-logo-img">
+        <span class="game-click-label">Click to Play</span>
+      </button>
+    </div>
+    <div class="game-view" id="game-playing" style="display:none">
+      <div class="game-card" id="game-card-content"></div>
+    </div>
+  </div>
+
+  <!-- ── ARCHIVE ── -->
+  <div class="view" id="view-archive">
+    <div class="archive-controls">
+      <input type="text" class="search-input" placeholder="Search film, topic, text..." id="archive-search-full" oninput="filterArchiveFull()">
+    </div>
+    <div id="archive-full-list"><div class="empty-state"><div class="loading-spinner"></div></div></div>
+  </div>
 
 <!-- ── MODAL ── -->
 <div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
