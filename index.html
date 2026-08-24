@@ -1433,6 +1433,65 @@
     accent-color: var(--gold);
   }
 
+
+  .game-intro-text {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: var(--muted);
+    white-space: pre-wrap;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .game-card-pill {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .game-pill-indicator {
+    min-width: 1.5rem;
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .game-pill-text { flex: 1; }
+
+  .gc-check {
+    color: #4caf50;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  .gc-cross {
+    color: #f44336;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  .game-card-reveal {
+    display: none;
+    margin-top: 1rem;
+    padding: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+  }
+
+  .game-card-reveal.show { display: block; }
+
+  .gc-reveal-text {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
 </style>
 </head>
 <body>
@@ -1699,8 +1758,14 @@
 
   <!-- ── ARCHIVE ── -->
   <div class="view" id="view-archive">
-    <div class="archive-controls">
+    <div class="library-controls">
       <input type="text" class="search-input" placeholder="Search film, topic, text..." id="archive-search-full" oninput="filterArchiveFull()">
+      <select class="filter-select" id="archive-filter-status" onchange="filterArchiveFull()">
+        <option value="all">All statuses</option>
+        <option value="published">Published</option>
+        <option value="scheduled">Scheduled</option>
+        <option value="draft">Draft</option>
+      </select>
     </div>
     <div id="archive-full-list"><div class="empty-state"><div class="loading-spinner"></div></div></div>
   </div>
@@ -1866,7 +1931,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '3.3';
+const APP_VERSION = '3.4';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2324,23 +2389,36 @@ function startGame() {
 
 function renderGameCard(s) {
   const entries = s.entries || [];
+
+  // Parse fullText — split into intro (before first #1 entry) and reveal (after last entry)
+  const fullText = s.fullText || '';
+  const firstEntryMatch = fullText.match(/\n#1\s*—|\n1\./);
+  const revealMatch = fullText.match(/(?:OK\s*—|Alright\s*—|Which|It was|The true|It wasn't|Now comes|The correct)[\s\S]*$/i);
+
+  let introText = firstEntryMatch
+    ? fullText.slice(0, fullText.indexOf(firstEntryMatch[0])).trim()
+    : fullText.slice(0, Math.floor(fullText.length * 0.4)).trim();
+
+  let revealText = revealMatch ? revealMatch[0].trim() : (s.trueStory || '');
+
   document.getElementById('game-card-content').innerHTML = `
-    <div class="game-ts-label">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'}</div>
-    <div class="game-card-film">${esc(s.film)}</div>
-    ${s.topic ? `<div class="game-card-topic">${esc(s.topic)}</div>` : ''}
+    <div class="game-ts-label">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'} · ${esc(s.film)}</div>
+    <div class="game-intro-text">${esc(introText)}</div>
     <div class="game-card-entries" id="gc-entries">
       ${entries.map((e, i) => `
         <button class="game-card-pill" onclick="selectGameEntry(this, ${i})" data-index="${i}">
-          <strong>#${i+1}</strong> — ${esc(e.text)}
+          <span class="game-pill-indicator" id="gc-indicator-${i}"></span>
+          <span class="game-pill-text"><strong>#${i+1}</strong> — ${esc(e.text)}</span>
         </button>
       `).join('')}
     </div>
-    <button class="btn btn-primary game-card-submit" onclick="submitGameGuess()">Submit answer</button>
-    <div class="game-card-result" id="gc-result"></div>
-    <button class="btn btn-secondary game-play-again" id="gc-play-again" onclick="startGame()">Play again</button>
+    <button class="btn btn-primary game-card-submit" id="gc-submit" onclick="submitGameGuess()">Submit answer</button>
+    <div class="game-card-reveal" id="gc-reveal"></div>
+    <button class="btn btn-secondary game-play-again" id="gc-play-again" onclick="startGame()">▶ Play again</button>
   `;
   window._gameSelected = null;
   window._gameSubmitted = false;
+  window._gameRevealText = revealText;
 }
 
 function selectGameEntry(btn, index) {
@@ -2360,19 +2438,33 @@ function submitGameGuess() {
   const correctIndex = entries.findIndex(e => e.isTrue);
   const isCorrect = window._gameSelected === correctIndex;
 
+  // Style pills and show indicators
   document.querySelectorAll('#gc-entries .game-card-pill').forEach((p, i) => {
     p.disabled = true;
-    if (i === correctIndex) p.classList.add('correct');
-    else if (i === window._gameSelected && !isCorrect) p.classList.add('wrong');
+    const indicator = document.getElementById('gc-indicator-' + i);
+    if (i === correctIndex) {
+      p.classList.add('correct');
+      if (indicator) indicator.innerHTML = '<span class="gc-check">✓</span>';
+    } else if (i === window._gameSelected && !isCorrect) {
+      p.classList.add('wrong');
+      if (indicator) indicator.innerHTML = '<span class="gc-cross">✗</span>';
+    }
   });
 
-  const resultEl = document.getElementById('gc-result');
-  resultEl.className = 'game-card-result show ' + (isCorrect ? 'correct-result' : 'wrong-result');
-  resultEl.innerHTML = isCorrect
-    ? `<strong>That's right!</strong> ${esc(s.trueStory || '')}<br><em>${esc(s.closer || '')}</em>`
-    : `<strong>Not quite.</strong> The true story was #${correctIndex + 1}.<br>${esc(s.trueStory || '')}<br><em>${esc(s.closer || '')}</em>`;
+  // Hide submit button
+  const submitBtn = document.getElementById('gc-submit');
+  if (submitBtn) submitBtn.style.display = 'none';
 
-  document.getElementById('gc-play-again').className = 'btn btn-secondary game-play-again show';
+  // Show reveal text
+  const revealEl = document.getElementById('gc-reveal');
+  if (revealEl) {
+    revealEl.className = 'game-card-reveal show';
+    revealEl.innerHTML = `<div class="gc-reveal-text">${esc(window._gameRevealText || s.trueStory || '')}</div>`;
+  }
+
+  // Show play again
+  const playAgain = document.getElementById('gc-play-again');
+  if (playAgain) playAgain.classList.add('show');
 }
 
 function previewGame(id) {
@@ -2393,9 +2485,11 @@ function renderArchiveFull() {
 
 function filterArchiveFull() {
   const q = (document.getElementById('archive-search-full')?.value || '').toLowerCase();
+  const f = document.getElementById('archive-filter-status')?.value || 'all';
   const segments = window._allSegments || [];
   const filtered = segments
     .filter(s => {
+      if (f !== 'all' && s.status !== f) return false;
       if (!q) return true;
       return ['film','topic','trueStory','fullText','closer'].some(k => (s[k] || '').toLowerCase().includes(q));
     })
@@ -2409,13 +2503,29 @@ function filterArchiveFull() {
   }
   list.innerHTML = filtered.map(s => `
     <div class="archive-full-card">
-      <div class="archive-full-header">
-        <div class="archive-full-meta">
-          <div class="archive-full-film">${esc(s.film)}</div>
-          <div class="archive-full-sub">TS-${s.tsNumber || '?'} · Ep ${s.episodeNumber || '?'} · Air ${formatDate(s.airDate)} · <span class="card-status status-${s.status}">${s.status}</span>${s.playable === false ? ' · <span style="color:var(--muted)">non-playable</span>' : ''}</div>
+      <div class="card-header" style="align-items:flex-start; margin-bottom:0.875rem">
+        <div class="card-left">
+          <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
+          <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
+        </div>
+        <div class="card-center">
+          <div class="card-film-title">${esc(s.film)}</div>
+          ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
+        </div>
+        <div class="card-right">
+          <div class="card-dates">
+            <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
+            <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+          </div>
+          <span class="card-status-bottom status-${s.status}">${s.status}</span>
+          ${s.playable === false ? '<span class="card-status-bottom" style="background:var(--surface);color:var(--muted);border:1px solid var(--border)">non-playable</span>' : ''}
         </div>
       </div>
       <div class="archive-full-text">${esc(s.fullText || 'No full text saved.')}</div>
+      <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:1px solid var(--border);display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('${s.id}')">Edit</button>
+        <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(s.fullText || '')}).then(()=>toast('Copied ✓'))">Copy text</button>
+      </div>
     </div>
   `).join('');
 }
