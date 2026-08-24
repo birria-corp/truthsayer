@@ -977,8 +977,8 @@
 
   .card-ep {
     font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--muted);
+    font-size: 0.85rem;
+    color: var(--gold);
   }
 
   .card-num {
@@ -1282,6 +1282,157 @@
   .game-result.correct-result { border-color: #4caf50; background: #1a3a1a; color: #81c784; }
   .game-result.wrong-result { border-color: #f44336; background: #3a1a1a; color: #e57373; }
 
+
+  /* ── ACTIVE TAB HIGHLIGHT ── */
+  .nav-tab.active {
+    color: var(--gold);
+    border-bottom: 2px solid var(--gold);
+  }
+
+  /* ── THE GAME ── */
+  .game-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 2rem;
+  }
+
+  .game-logo-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    transition: transform 0.15s;
+  }
+
+  .game-logo-btn:hover { transform: scale(1.05); }
+
+  .game-logo-img {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    border-radius: 12px;
+  }
+
+  .game-click-label {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .game-card {
+    width: 100%;
+    max-width: 680px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  .game-card-film {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .game-card-topic {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 1.5rem;
+  }
+
+  .game-card-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .game-card-pill {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+  }
+
+  .game-card-pill:hover:not(:disabled) { border-color: var(--gold-dim); }
+  .game-card-pill.selected { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+  .game-card-pill.correct { background: #0d2b0d; border-color: #4caf50; color: #81c784; }
+  .game-card-pill.wrong { background: #2b0d0d; border-color: #f44336; color: #e57373; }
+  .game-card-pill:disabled { cursor: default; }
+
+  .game-card-submit {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .game-card-result {
+    display: none;
+    padding: 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .game-card-result.show { display: block; }
+  .game-card-result.correct-result { background: #0d2b0d; border: 1px solid #4caf50; color: #81c784; }
+  .game-card-result.wrong-result { background: #2b0d0d; border: 1px solid #f44336; color: #e57373; }
+
+  .game-play-again {
+    display: none;
+    width: 100%;
+  }
+
+  .game-play-again.show { display: block; }
+
+  .game-ts-label {
+    font-size: 0.72rem;
+    color: var(--dim);
+    font-family: var(--font-mono);
+    margin-bottom: 1rem;
+  }
+
+  /* ── PLAYABLE FIELD (edit modal) ── */
+  .playable-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  .playable-row label {
+    font-size: 0.875rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .playable-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--gold);
+  }
+
 </style>
 </head>
 <body>
@@ -1300,9 +1451,10 @@
 </header>
 
 <nav id="app-nav">
-  <button class="nav-tab active" onclick="showView('dashboard')">The Library</button>
+  <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard">The Library</button>
   <button class="nav-tab admin-only" onclick="showView('new-segment')" id="tab-new">Segment Builder</button>
   <button class="nav-tab admin-only" onclick="showView('archive')" id="tab-archive">Archive</button>
+  <button class="nav-tab" onclick="showView('game')" id="tab-game">The Game</button>
 </nav>
 
 <main id="app-main">
@@ -1394,19 +1546,6 @@
     <div id="auth-banner">
       <p>Sign in with your Google account to publish segments.</p>
       <button class="btn btn-primary btn-sm" onclick="handleAuthClick()">Sign in with Google</button>
-    </div>
-
-    <!-- JSON IMPORT (single segment) -->
-    <div class="import-box">
-      <p class="import-box-title">Import from JSON</p>
-      <div class="import-row">
-        <textarea id="json-import" placeholder='Paste segment JSON here and click Import...'></textarea>
-        <div style="display:flex;flex-direction:column;gap:0.5rem">
-          <button class="btn btn-primary btn-sm" onclick="importJSON()">Import</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearImport()">Clear</button>
-        </div>
-      </div>
-      <div id="import-feedback"></div>
     </div>
 
     <!-- BULK IMPORT / BATCH EDIT (collapsible) -->
@@ -1705,7 +1844,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.3';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -1787,11 +1926,14 @@ function showView(id) {
   if ((id === 'new-segment' || id === 'archive') && !isAdmin()) return;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('view-' + id).classList.add('active');
-  const labels = ['dashboard', 'new-segment', 'archive'];
-  document.querySelectorAll('.nav-tab')[labels.indexOf(id)]?.classList.add('active');
+  document.getElementById('view-' + id)?.classList.add('active');
+  // Highlight active tab
+  const tabMap = { 'dashboard': 'tab-dashboard', 'new-segment': 'tab-new', 'archive': 'tab-archive', 'game': 'tab-game' };
+  const activeTabId = tabMap[id];
+  if (activeTabId) document.getElementById(activeTabId)?.classList.add('active');
   if (id === 'new-segment') autoIncrementEpisode();
   if (id === 'archive') renderArchiveFull();
+  if (id === 'game') initGame();
 }
 
 function autoIncrementEpisode() {
@@ -2131,9 +2273,129 @@ function filterArchive() {
 
 // ── MODAL ──
 
-// ── ARCHIVE FULL TEXT ──
+// ── THE GAME ──
+let _gameCurrentSegment = null;
+
+function getPlayableSegments() {
+  return (window._allSegments || []).filter(s =>
+    s.status === 'published' &&
+    s.playable !== false &&
+    s.entries && s.entries.length >= 2 &&
+    s.entries.some(e => e.isTrue)
+  );
+}
+
+function initGame() {
+  document.getElementById('game-landing').style.display = 'flex';
+  document.getElementById('game-playing').style.display = 'none';
+}
+
+function startGame() {
+  const playable = getPlayableSegments();
+  if (!playable.length) { toast('No playable segments available'); return; }
+  const s = playable[Math.floor(Math.random() * playable.length)];
+  _gameCurrentSegment = s;
+  renderGameCard(s);
+  document.getElementById('game-landing').style.display = 'none';
+  document.getElementById('game-playing').style.display = 'flex';
+}
+
+function renderGameCard(s) {
+  const entries = s.entries || [];
+  document.getElementById('game-card-content').innerHTML = `
+    <div class="game-ts-label">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'}</div>
+    <div class="game-card-film">${esc(s.film)}</div>
+    ${s.topic ? `<div class="game-card-topic">${esc(s.topic)}</div>` : ''}
+    <div class="game-card-entries" id="gc-entries">
+      ${entries.map((e, i) => `
+        <button class="game-card-pill" onclick="selectGameEntry(this, ${i})" data-index="${i}">
+          <strong>#${i+1}</strong> — ${esc(e.text)}
+        </button>
+      `).join('')}
+    </div>
+    <button class="btn btn-primary game-card-submit" onclick="submitGameGuess()">Submit answer</button>
+    <div class="game-card-result" id="gc-result"></div>
+    <button class="btn btn-secondary game-play-again" id="gc-play-again" onclick="startGame()">Play again</button>
+  `;
+  window._gameSelected = null;
+  window._gameSubmitted = false;
+}
+
+function selectGameEntry(btn, index) {
+  if (window._gameSubmitted) return;
+  document.querySelectorAll('#gc-entries .game-card-pill').forEach(p => p.classList.remove('selected'));
+  btn.classList.add('selected');
+  window._gameSelected = index;
+}
+
+function submitGameGuess() {
+  if (window._gameSubmitted) return;
+  if (window._gameSelected === null) { toast('Pick an answer first'); return; }
+  window._gameSubmitted = true;
+
+  const s = _gameCurrentSegment;
+  const entries = s.entries || [];
+  const correctIndex = entries.findIndex(e => e.isTrue);
+  const isCorrect = window._gameSelected === correctIndex;
+
+  document.querySelectorAll('#gc-entries .game-card-pill').forEach((p, i) => {
+    p.disabled = true;
+    if (i === correctIndex) p.classList.add('correct');
+    else if (i === window._gameSelected && !isCorrect) p.classList.add('wrong');
+  });
+
+  const resultEl = document.getElementById('gc-result');
+  resultEl.className = 'game-card-result show ' + (isCorrect ? 'correct-result' : 'wrong-result');
+  resultEl.innerHTML = isCorrect
+    ? `<strong>That's right!</strong> ${esc(s.trueStory || '')}<br><em>${esc(s.closer || '')}</em>`
+    : `<strong>Not quite.</strong> The true story was #${correctIndex + 1}.<br>${esc(s.trueStory || '')}<br><em>${esc(s.closer || '')}</em>`;
+
+  document.getElementById('gc-play-again').className = 'btn btn-secondary game-play-again show';
+}
+
+function previewGame(id) {
+  const s = (window._allSegments || []).find(x => x.id === id);
+  if (!s) return;
+  _gameCurrentSegment = s;
+  renderGameCard(s);
+  document.getElementById('game-landing').style.display = 'none';
+  document.getElementById('game-playing').style.display = 'flex';
+  closeModal();
+  showView('game');
+}
+
+// ── ARCHIVE FIX ──
 function renderArchiveFull() {
   filterArchiveFull();
+}
+
+function filterArchiveFull() {
+  const q = (document.getElementById('archive-search-full')?.value || '').toLowerCase();
+  const segments = window._allSegments || [];
+  const filtered = segments
+    .filter(s => {
+      if (!q) return true;
+      return ['film','topic','trueStory','fullText','closer'].some(k => (s[k] || '').toLowerCase().includes(q));
+    })
+    .sort((a, b) => (b.tsNumber || 0) - (a.tsNumber || 0));
+
+  const list = document.getElementById('archive-full-list');
+  if (!list) return;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><p>No segments found.</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(s => `
+    <div class="archive-full-card">
+      <div class="archive-full-header">
+        <div class="archive-full-meta">
+          <div class="archive-full-film">${esc(s.film)}</div>
+          <div class="archive-full-sub">TS-${s.tsNumber || '?'} · Ep ${s.episodeNumber || '?'} · Air ${formatDate(s.airDate)} · <span class="card-status status-${s.status}">${s.status}</span>${s.playable === false ? ' · <span style="color:var(--muted)">non-playable</span>' : ''}</div>
+        </div>
+      </div>
+      <div class="archive-full-text">${esc(s.fullText || 'No full text saved.')}</div>
+    </div>
+  `).join('');
 }
 
 function filterArchiveFull() {
@@ -2163,6 +2425,10 @@ function filterArchiveFull() {
 }
 
 // ── GUESSING GAME ──
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
 function openModal(id) {
   const s = (window._allSegments || []).find(x => x.id === id);
   if (!s) return;
@@ -2218,6 +2484,12 @@ function openModal(id) {
     editBtn.textContent = 'Edit';
     editBtn.onclick = () => enterEditMode(s);
     actions.appendChild(editBtn);
+
+    const previewBtn = document.createElement('button');
+    previewBtn.className = 'btn btn-secondary btn-sm';
+    previewBtn.textContent = 'Preview Game';
+    previewBtn.onclick = () => previewGame(id);
+    actions.appendChild(previewBtn);
 
     const copyBtn = document.createElement('button');
     copyBtn.className = 'btn btn-secondary btn-sm';
@@ -2286,6 +2558,7 @@ function enterEditMode(s) {
   document.getElementById('edit-closer').value = s.closer || '';
   document.getElementById('edit-fulltext').value = s.fullText || '';
   document.getElementById('edit-status').value = s.status || 'published';
+  document.getElementById('edit-playable').checked = s.playable !== false;
 
   renderEditEntries(s.entries || []);
   document.getElementById('modal-edit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2366,6 +2639,7 @@ async function saveEdit() {
       closer: document.getElementById('edit-closer').value.trim(),
       fullText: document.getElementById('edit-fulltext').value.trim(),
       status: document.getElementById('edit-status').value,
+      playable: document.getElementById('edit-playable').checked,
       segmentId,
       updatedAt: window._serverTimestamp()
     }, { merge: true });
