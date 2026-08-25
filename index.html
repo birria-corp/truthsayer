@@ -1492,6 +1492,14 @@
     white-space: pre-wrap;
   }
 
+
+  .modal-reveal {
+    color: var(--gold);
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
 </style>
 </head>
 <body>
@@ -1777,12 +1785,12 @@
     <div class="modal-film" id="modal-film"></div>
     <div class="modal-meta" id="modal-meta"></div>
     <div class="segment-id-display" id="modal-segment-id"></div>
-    <p class="modal-section-label">Full segment</p>
-    <div class="modal-fulltext" id="modal-fulltext"></div>
-    <p class="modal-section-label">Entries</p>
+    <p class="modal-section-label">Setup</p>
+    <div class="modal-fulltext" id="modal-setup"></div>
+    <p class="modal-section-label">Options</p>
     <div id="modal-entries"></div>
-    <p class="modal-section-label">True story</p>
-    <div style="font-size:1rem;color:var(--gold);margin-bottom:0.25rem" id="modal-truth"></div>
+    <p class="modal-section-label">Reveal</p>
+    <div class="modal-fulltext modal-reveal" id="modal-reveal"></div>
     <div class="modal-actions" id="modal-actions"></div>
 
     <!-- EDIT MODE -->
@@ -1931,7 +1939,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '3.5';
+const APP_VERSION = '3.6';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2390,16 +2398,9 @@ function startGame() {
 function renderGameCard(s) {
   const entries = s.entries || [];
 
-  // Parse fullText — split into intro (before first #1 entry) and reveal (after last entry)
-  const fullText = s.fullText || '';
-  const firstEntryMatch = fullText.match(/\n#1\s*—|\n1\./);
-  const revealMatch = fullText.match(/(?:OK\s*—|Alright\s*—|Which|It was|The true|It wasn't|Now comes|The correct)[\s\S]*$/i);
-
-  let introText = firstEntryMatch
-    ? fullText.slice(0, fullText.indexOf(firstEntryMatch[0])).trim()
-    : fullText.slice(0, Math.floor(fullText.length * 0.4)).trim();
-
-  let revealText = revealMatch ? revealMatch[0].trim() : (s.trueStory || '');
+  // Use stored setupText/revealText fields if available
+  const introText = s.setupText || (s.fullText || '').split(/\n#1\s*[—-]/)[0].trim();
+  const revealText = s.revealText || s.trueStory || '';
 
   document.getElementById('game-card-content').innerHTML = `
     <div class="game-ts-label">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'} · ${esc(s.film)}</div>
@@ -2605,8 +2606,16 @@ function openModal(id) {
     window._gameState[id] = { selected: null, submitted: false, entries };
   }
 
-  document.getElementById('modal-truth').textContent = isAdminUser ? (s.trueStory || '') : '';
-  document.getElementById('modal-fulltext').textContent = isAdminUser ? (s.fullText || 'No full text saved.') : '';
+  // Setup and Reveal — use stored fields if available, fall back to fullText
+  const setupEl = document.getElementById('modal-setup');
+  const revealEl = document.getElementById('modal-reveal');
+  if (isAdminUser) {
+    if (setupEl) setupEl.textContent = s.setupText || s.fullText || 'No setup text saved.';
+    if (revealEl) revealEl.textContent = s.revealText || s.trueStory || '';
+  } else {
+    if (setupEl) setupEl.textContent = s.setupText || '';
+    if (revealEl) revealEl.textContent = '';
+  }
 
   const actions = document.getElementById('modal-actions');
   actions.innerHTML = '';
