@@ -968,6 +968,7 @@
 
   /* ── SEGMENT CARD v2 ── */
   .card-left {
+    min-width: 5.5rem;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -1500,6 +1501,49 @@
     margin-top: 0.25rem;
   }
 
+
+  .game-card-header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .game-card-meta-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .game-meta-ep, .game-meta-ts, .game-meta-date {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--gold);
+  }
+
+  .game-meta-date {
+    color: var(--muted);
+  }
+
+  .game-meta-film {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  /* Remove old ts label */
+  .game-ts-label { display: none; }
+
+
+  .archive-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--border);
+  }
+
 </style>
 </head>
 <body>
@@ -1601,7 +1645,6 @@
       <span class="sort-label">Sort</span>
       <button class="sort-btn active desc" id="dsort-ts" onclick="setDashSort('tsNumber', this)">TS #</button>
       <button class="sort-btn" id="dsort-film" onclick="setDashSort('film', this)">Film</button>
-      <button class="sort-btn" id="dsort-record" onclick="setDashSort('recordDate', this)">Record Date</button>
       <button class="sort-btn" id="dsort-air" onclick="setDashSort('airDate', this)">Air Date</button>
     </div>
 
@@ -1659,45 +1702,37 @@
       <div class="form-row three">
         <div class="field">
           <label for="f-ts-num">TS Number</label>
-          <input type="number" id="f-ts-num" placeholder="162">
+          <input type="number" id="f-ts-num" placeholder="163">
         </div>
         <div class="field">
           <label for="f-ep-num">Episode #</label>
           <input type="number" id="f-ep-num" placeholder="auto">
         </div>
         <div class="field">
-          <label for="f-ts-num" style="opacity:0">x</label>
+          <label style="opacity:0">x</label>
           <div id="segment-id-preview" style="font-family:var(--font-mono);font-size:0.72rem;color:var(--dim);padding:0.5rem 0.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">ep-???-film-slug</div>
         </div>
       </div>
       <div class="form-row">
         <div class="field">
-          <label for="f-record-date">Record Date</label>
-          <input type="date" id="f-record-date">
-        </div>
-        <div class="field">
-          <label for="f-air-date">Air Date</label>
+          <label for="f-air-date">Release Date</label>
           <input type="date" id="f-air-date">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="field">
-          <label for="f-film">Film Title</label>
-          <input type="text" id="f-film" placeholder="e.g. Chinatown (1974)">
         </div>
         <div class="field">
           <label for="f-variant">Segment Variant</label>
           <select id="f-variant">
             <option value="standard">Standard (2 false, 1 true)</option>
-            <option value="list-false">List — find the false</option>
-            <option value="list-true">List — find the true</option>
+            <option value="list">List</option>
             <option value="all-true">All true</option>
-            <option value="count">Count format</option>
-            <option value="race">Trivia race</option>
+            <option value="non-standard">Non-standard</option>
           </select>
         </div>
       </div>
-      <div class="form-row single">
+      <div class="form-row">
+        <div class="field">
+          <label for="f-film">Film Title</label>
+          <input type="text" id="f-film" placeholder="e.g. Chinatown (1974)" oninput="updateSegmentIdPreview()">
+        </div>
         <div class="field">
           <label for="f-topic">Topic / Angle</label>
           <input type="text" id="f-topic" placeholder="e.g. Jack Nicholson's pre-fame years">
@@ -1706,23 +1741,25 @@
     </div>
 
     <div class="form-section">
-      <p class="form-section-title">Entries</p>
-      <div class="entries-builder" id="entries-builder"></div>
-      <button class="btn btn-ghost btn-sm" onclick="addEntry()" style="margin-top:0.625rem">+ Add entry</button>
+      <p class="form-section-title">Setup</p>
+      <div class="form-row single">
+        <div class="field">
+          <textarea class="tall" id="f-setup" placeholder="The film intro and setup text — everything up to 'Time for the Truthsayer'" oninput="compileFullText()"></textarea>
+        </div>
+      </div>
     </div>
 
     <div class="form-section">
-      <p class="form-section-title">Reveal & Closer</p>
+      <p class="form-section-title">Options</p>
+      <div class="entries-builder" id="entries-builder"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addEntry()" style="margin-top:0.625rem">+ Add option</button>
+    </div>
+
+    <div class="form-section">
+      <p class="form-section-title">Reveal</p>
       <div class="form-row single">
         <div class="field">
-          <label for="f-true-story">True story summary</label>
-          <input type="text" id="f-true-story" placeholder="One line — what the true answer actually is">
-        </div>
-      </div>
-      <div class="form-row single">
-        <div class="field">
-          <label for="f-closer">Closing line / film quote</label>
-          <input type="text" id="f-closer" placeholder="The last line before 'Here ends the Truthsayer'">
+          <textarea class="tall" id="f-reveal" placeholder="The reveal text — everything from the answer question through 'Here ends the Truthsayer'" oninput="compileFullText()"></textarea>
         </div>
       </div>
     </div>
@@ -1731,8 +1768,7 @@
       <p class="form-section-title">Full Segment Text</p>
       <div class="form-row single">
         <div class="field">
-          <label for="f-fulltext">Final segment text</label>
-          <textarea class="tall" id="f-fulltext" placeholder="Paste the complete, final segment here..."></textarea>
+          <textarea class="tall" id="f-fulltext" readonly style="opacity:0.6;cursor:default" placeholder="Auto-compiled from Setup + Options + Reveal..."></textarea>
           <div class="char-count" id="char-count">0 words</div>
         </div>
       </div>
@@ -1939,7 +1975,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '3.6';
+const APP_VERSION = '4.0';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2061,11 +2097,13 @@ function importJSON() {
   if (data.film) document.getElementById('f-film').value = data.film;
   if (data.topic) document.getElementById('f-topic').value = data.topic;
   if (data.variant) document.getElementById('f-variant').value = data.variant;
-  if (data.trueStory) document.getElementById('f-true-story').value = data.trueStory;
-  if (data.closer) document.getElementById('f-closer').value = data.closer;
+  if (data.setupText) document.getElementById('f-setup').value = data.setupText;
+  if (data.revealText) document.getElementById('f-reveal').value = data.revealText;
   if (data.fullText) {
     document.getElementById('f-fulltext').value = data.fullText;
     updateWordCount();
+  } else {
+    compileFullText();
   }
 
   if (data.entries && Array.isArray(data.entries)) {
@@ -2105,10 +2143,10 @@ function renderEntries() {
     div.innerHTML = `
       <span class="entry-num">#${i+1}</span>
       <div class="entry-fields">
-        <textarea placeholder="Entry text..." rows="2" oninput="updateEntry(${i}, this.value)">${esc(entry.text)}</textarea>
+        <textarea placeholder="Option text..." rows="2" oninput="updateEntry(${i}, this.value); compileFullText();">${esc(entry.text)}</textarea>
         <label class="entry-true-toggle">
-          <input type="radio" name="true-entry" ${entry.isTrue ? 'checked' : ''} onchange="setTrueEntry(${i})">
-          <span>This is the true entry</span>
+          <input type="checkbox" ${entry.isTrue ? 'checked' : ''} onchange="toggleTrueEntry(${i}, this.checked)">
+          <span>Correct Option</span>
         </label>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="removeEntry(${i})" ${entries.length <= 2 ? 'disabled' : ''}>✕</button>
@@ -2118,6 +2156,7 @@ function renderEntries() {
 }
 
 function updateEntry(i, val) { entries[i].text = val; }
+function toggleTrueEntry(i, checked) { entries[i].isTrue = checked; renderEntries(); compileFullText(); }
 function setTrueEntry(i) { entries.forEach((e, idx) => e.isTrue = (idx === i)); renderEntries(); }
 function addEntry() { entries.push({ text: '', isTrue: false }); renderEntries(); }
 function removeEntry(i) {
@@ -2128,13 +2167,23 @@ function removeEntry(i) {
   renderEntries();
 }
 
-// ── WORD COUNT ──
+// ── WORD COUNT & COMPILE ──
 function updateWordCount() {
   const ft = document.getElementById('f-fulltext');
   const cc = document.getElementById('char-count');
+  if (!ft || !cc) return;
   const words = ft.value.trim().split(/\s+/).filter(Boolean).length;
   cc.textContent = words + ' words';
   cc.className = 'char-count' + (words > 300 ? ' over' : words > 250 ? ' warn' : '');
+}
+
+function compileFullText() {
+  const setup = (document.getElementById('f-setup')?.value || '').trim();
+  const reveal = (document.getElementById('f-reveal')?.value || '').trim();
+  const optionLines = entries.map((e, i) => `#${i+1} — ${e.text}`).join('\n');
+  const full = [setup, optionLines, reveal].filter(Boolean).join('\n\n');
+  const ft = document.getElementById('f-fulltext');
+  if (ft) { ft.value = full; updateWordCount(); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2144,7 +2193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initEntries();
   setDefaultDate();
-  document.getElementById('f-fulltext').addEventListener('input', updateWordCount);
+  // fulltext is auto-compiled — no direct listener needed
 
   // Live segment ID preview
   function updateSegmentIdPreview() {
@@ -2176,7 +2225,7 @@ async function saveSegment(status) {
   if (!window._currentUser) { toast('Sign in to save segments'); return; }
   const film = document.getElementById('f-film').value.trim();
   if (!film) { toast('Film title is required'); return; }
-  if (entries.filter(e => e.isTrue).length !== 1) { toast('Exactly one entry must be marked true'); return; }
+  if (entries.filter(e => e.isTrue).length === 0) { toast('At least one option must be marked as correct'); return; }
 
   const btnId = status === 'draft' ? 'btn-draft' : 'btn-publish';
   const btn = document.getElementById(btnId);
@@ -2184,6 +2233,7 @@ async function saveSegment(status) {
   btn.innerHTML = '<span class="loading-spinner"></span>';
 
   try {
+    compileFullText();
     const data = {
       tsNumber: parseInt(document.getElementById('f-ts-num').value) || null,
       episodeNumber: parseInt(document.getElementById('f-ep-num').value) || null,
@@ -2192,9 +2242,11 @@ async function saveSegment(status) {
       topic: document.getElementById('f-topic').value.trim(),
       variant: document.getElementById('f-variant').value,
       entries: entries.map(e => ({ text: e.text, isTrue: e.isTrue })),
-      trueStory: document.getElementById('f-true-story').value.trim(),
-      closer: document.getElementById('f-closer').value.trim(),
+      setupText: (document.getElementById('f-setup')?.value || '').trim(),
+      revealText: (document.getElementById('f-reveal')?.value || '').trim(),
+      optionsText: entries.map((e, i) => `#${i+1} — ${e.text}`).join('\n'),
       fullText: document.getElementById('f-fulltext').value.trim(),
+      playable: true,
       status,
       authorUid: window._currentUser.uid,
       authorEmail: window._currentUser.email,
@@ -2216,13 +2268,12 @@ async function saveSegment(status) {
 }
 
 function clearForm() {
-  ['f-film','f-topic','f-ts-num','f-ep-num','f-record-date','f-true-story','f-closer','f-fulltext'].forEach(id => {
+  ['f-film','f-topic','f-ts-num','f-ep-num','f-setup','f-reveal','f-fulltext'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('f-variant').value = 'standard';
   document.getElementById('char-count').textContent = '0 words';
-  document.getElementById('import-feedback').innerHTML = '';
   setDefaultDate();
   initEntries();
 }
@@ -2356,7 +2407,6 @@ function filterArchive() {
           </div>
           <div class="card-right">
             <div class="card-dates">
-              <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
               <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
             </div>
             <span class="card-status-bottom status-${s.status}">${s.status}</span>
@@ -2403,7 +2453,14 @@ function renderGameCard(s) {
   const revealText = s.revealText || s.trueStory || '';
 
   document.getElementById('game-card-content').innerHTML = `
-    <div class="game-ts-label">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'} · ${esc(s.film)}</div>
+    <div class="game-card-header">
+      <div class="game-card-meta-row">
+        ${s.episodeNumber ? `<span class="game-meta-ep">Ep ${s.episodeNumber}</span>` : ''}
+        ${s.tsNumber ? `<span class="game-meta-ts">TS-${s.tsNumber}</span>` : ''}
+        ${s.airDate ? `<span class="game-meta-date">${esc(s.airDate)}</span>` : ''}
+      </div>
+      <div class="game-meta-film">${esc(s.film)}</div>
+    </div>
     <div class="game-intro-text">${esc(introText)}</div>
     <div class="game-card-entries" id="gc-entries">
       ${entries.map((e, i) => `
@@ -2472,11 +2529,16 @@ function previewGame(id) {
   const s = (window._allSegments || []).find(x => x.id === id);
   if (!s) return;
   _gameCurrentSegment = s;
-  renderGameCard(s);
-  document.getElementById('game-landing').style.display = 'none';
-  document.getElementById('game-playing').style.display = 'flex';
   closeModal();
   showView('game');
+  // Wait for view to render then populate
+  setTimeout(() => {
+    renderGameCard(s);
+    const landing = document.getElementById('game-landing');
+    const playing = document.getElementById('game-playing');
+    if (landing) landing.style.display = 'none';
+    if (playing) playing.style.display = 'flex';
+  }, 50);
 }
 
 // ── ARCHIVE FIX ──
@@ -2523,8 +2585,8 @@ function filterArchiveFull() {
         </div>
       </div>
       <div class="archive-full-text">${esc(s.fullText || 'No full text saved.')}</div>
-      <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:1px solid var(--border);display:flex;gap:0.5rem">
-        <button class="btn btn-secondary btn-sm" onclick="openModal('${s.id}')">Edit</button>
+      <div class="archive-card-actions">
+        <button class="btn btn-primary btn-sm" onclick="openModal('${s.id}')">✏ Edit segment</button>
         <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(s.fullText || '')}).then(()=>toast('Copied ✓'))">Copy text</button>
       </div>
     </div>
