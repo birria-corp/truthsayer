@@ -1998,7 +1998,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.3';
+const APP_VERSION = '4.4';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2845,6 +2845,11 @@ async function saveEdit() {
   }
 }
 
+function closeModal(e) {
+  if (!e || (e.target && e.target.id === 'modal-overlay')) {
+    closeModalDirect();
+  }
+}
 function closeModalDirect() { document.getElementById('modal-overlay').classList.add('hidden'); }
 
 async function deleteSegment(id) {
