@@ -1205,6 +1205,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    gap: 1rem;
     margin-bottom: 0.875rem;
     gap: 1rem;
   }
@@ -1215,7 +1216,9 @@
     gap: 0.2rem;
   }
 
+  .archive-full-film:hover { color: var(--gold); }
   .archive-full-film {
+    transition: color 0.15s;
     font-size: 1rem;
     font-weight: 500;
     color: var(--text);
@@ -1975,7 +1978,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2546,17 +2549,16 @@ function renderArchiveFull() {
   filterArchiveFull();
 }
 
+
 function filterArchiveFull() {
   const q = (document.getElementById('archive-search-full')?.value || '').toLowerCase();
   const f = document.getElementById('archive-filter-status')?.value || 'all';
   const segments = window._allSegments || [];
-  const filtered = segments
-    .filter(s => {
-      if (f !== 'all' && s.status !== f) return false;
-      if (!q) return true;
-      return ['film','topic','trueStory','fullText','closer'].some(k => (s[k] || '').toLowerCase().includes(q));
-    })
-    .sort((a, b) => (b.tsNumber || 0) - (a.tsNumber || 0));
+  const filtered = segments.filter(s => {
+    if (f !== 'all' && s.status !== f) return false;
+    if (!q) return true;
+    return ['film','topic','trueStory','fullText','setupText','revealText'].some(k => (s[k] || '').toLowerCase().includes(q));
+  }).sort((a, b) => (b.tsNumber || 0) - (a.tsNumber || 0));
 
   const list = document.getElementById('archive-full-list');
   if (!list) return;
@@ -2566,55 +2568,14 @@ function filterArchiveFull() {
   }
   list.innerHTML = filtered.map(s => `
     <div class="archive-full-card">
-      <div class="card-header" style="align-items:flex-start; margin-bottom:0.875rem">
-        <div class="card-left">
-          <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
-          <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
-        </div>
-        <div class="card-center">
-          <div class="card-film-title">${esc(s.film)}</div>
-          ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
-        </div>
-        <div class="card-right">
-          <div class="card-dates">
-            <div class="recent-date-pair"><span>Rec</span>${formatDate(s.recordDate)}</div>
-            <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
-          </div>
-          <span class="card-status-bottom status-${s.status}">${s.status}</span>
-          ${s.playable === false ? '<span class="card-status-bottom" style="background:var(--surface);color:var(--muted);border:1px solid var(--border)">non-playable</span>' : ''}
-        </div>
-      </div>
-      <div class="archive-full-text">${esc(s.fullText || 'No full text saved.')}</div>
-      <div class="archive-card-actions">
-        <button class="btn btn-primary btn-sm" onclick="openModal('${s.id}')">✏ Edit segment</button>
-        <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(${JSON.stringify(s.fullText || '')}).then(()=>toast('Copied ✓'))">Copy text</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function filterArchiveFull() {
-  const q = (document.getElementById('archive-search-full')?.value || '').toLowerCase();
-  const segments = window._allSegments || [];
-  const filtered = segments.filter(s => {
-    if (!q) return true;
-    return ['film','topic','trueStory','fullText','closer'].some(k => (s[k] || '').toLowerCase().includes(q));
-  }).sort((a, b) => (b.tsNumber || 0) - (a.tsNumber || 0));
-
-  const list = document.getElementById('archive-full-list');
-  if (!filtered.length) {
-    list.innerHTML = '<div class="empty-state"><p>No segments found.</p></div>';
-    return;
-  }
-  list.innerHTML = filtered.map(s => `
-    <div class="archive-full-card">
       <div class="archive-full-header">
         <div class="archive-full-meta">
-          <div class="archive-full-film">${esc(s.film)}</div>
-          <div class="archive-full-sub">TS-${s.tsNumber} · Ep ${s.episodeNumber || '?'} · Air ${formatDate(s.airDate)} · <span class="card-status status-${s.status}">${s.status}</span></div>
+          <div class="archive-full-film" onclick="openModal('${s.id}')" style="cursor:pointer">${esc(s.film)}</div>
+          <div class="archive-full-sub">TS-${s.tsNumber || '?'} · Ep ${s.episodeNumber || '?'} · Air ${formatDate(s.airDate)} · <span class="card-status status-${s.status}">${s.status}</span>${s.playable === false ? ' · <span style="color:var(--muted)">non-playable</span>' : ''}</div>
         </div>
+        <button class="btn btn-secondary btn-sm" onclick="openModal('${s.id}')" style="flex-shrink:0">Edit</button>
       </div>
-      <div class="archive-full-text">${esc(s.fullText || 'No full text saved.')}</div>
+      <div class="archive-full-text">${esc(s.fullText || s.setupText || 'No full text saved.')}</div>
     </div>
   `).join('');
 }
