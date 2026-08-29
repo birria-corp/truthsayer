@@ -1547,6 +1547,22 @@
     border-top: 1px solid var(--border);
   }
 
+
+  .modal-edit-section {
+    margin-bottom: 1rem;
+  }
+  .modal-edit-section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.375rem;
+  }
+  .modal-edit-textarea.tall {
+    min-height: 120px;
+  }
+
 </style>
 </head>
 <body>
@@ -1834,20 +1850,25 @@
 
     <!-- EDIT MODE -->
     <div class="modal-edit" id="modal-edit-form">
+      <!-- Metadata row -->
       <div class="modal-edit-row three" style="margin-bottom:0.875rem">
         <div class="modal-edit-field">
-          <label class="modal-edit-label">TS Number</label>
+          <label class="modal-edit-label">TS #</label>
           <input type="number" class="modal-edit-input" id="edit-ts-num">
         </div>
         <div class="modal-edit-field">
           <label class="modal-edit-label">Episode #</label>
           <input type="number" class="modal-edit-input" id="edit-ep-num">
         </div>
-      </div>
-      <div class="modal-edit-row" style="margin-bottom:0.875rem">
         <div class="modal-edit-field">
           <label class="modal-edit-label">Air Date</label>
           <input type="date" class="modal-edit-input" id="edit-air-date">
+        </div>
+      </div>
+      <div class="modal-edit-row" style="margin-bottom:0.875rem">
+        <div class="modal-edit-field">
+          <label class="modal-edit-label">Film Title</label>
+          <input type="text" class="modal-edit-input" id="edit-film">
         </div>
         <div class="modal-edit-field">
           <label class="modal-edit-label">Status</label>
@@ -1858,10 +1879,6 @@
           </select>
         </div>
       </div>
-      <div class="modal-edit-field" style="margin-bottom:0.875rem">
-        <label class="modal-edit-label">Film Title</label>
-        <input type="text" class="modal-edit-input" id="edit-film">
-      </div>
       <div class="modal-edit-row" style="margin-bottom:0.875rem">
         <div class="modal-edit-field">
           <label class="modal-edit-label">Topic / Angle</label>
@@ -1871,23 +1888,37 @@
           <label class="modal-edit-label">Variant</label>
           <select class="modal-edit-input" id="edit-variant">
             <option value="standard">Standard</option>
-            <option value="list-false">List — find the false</option>
-            <option value="list-true">List — find the true</option>
+            <option value="list">List</option>
             <option value="all-true">All true</option>
-            <option value="count">Count format</option>
-            <option value="race">Trivia race</option>
+            <option value="non-standard">Non-standard</option>
           </select>
         </div>
       </div>
-      <div class="modal-edit-field" style="margin-bottom:0.875rem">
-        <label class="modal-edit-label">Entries</label>
+
+      <!-- Setup -->
+      <div class="modal-edit-section">
+        <div class="modal-edit-section-label">Setup</div>
+        <textarea class="modal-edit-textarea tall" id="edit-setup" placeholder="Intro text through 'Time for the Truthsayer'"></textarea>
+      </div>
+
+      <!-- Options -->
+      <div class="modal-edit-section">
+        <div class="modal-edit-section-label">Options</div>
         <div id="edit-entries-container"></div>
       </div>
 
-      <div class="modal-edit-field" style="margin-bottom:1rem">
-        <label class="modal-edit-label">Full Segment Text</label>
-        <textarea class="modal-edit-textarea" id="edit-fulltext"></textarea>
+      <!-- Reveal -->
+      <div class="modal-edit-section">
+        <div class="modal-edit-section-label">Reveal</div>
+        <textarea class="modal-edit-textarea tall" id="edit-reveal" placeholder="Reveal question through 'Here ends the Truthsayer'"></textarea>
       </div>
+
+      <!-- Playable -->
+      <div class="playable-row" style="margin-bottom:0.875rem">
+        <input type="checkbox" id="edit-playable">
+        <label for="edit-playable">Playable in The Game</label>
+      </div>
+
       <div style="display:flex;gap:0.75rem;padding-top:0.875rem;border-top:1px solid var(--border)">
         <button class="btn btn-ghost btn-sm" onclick="cancelEdit()">Cancel</button>
         <div style="flex:1"></div>
@@ -1967,7 +1998,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.2';
+const APP_VERSION = '4.3';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2570,10 +2601,6 @@ function filterArchiveFull() {
 }
 
 // ── GUESSING GAME ──
-function closeModal() {
-  document.getElementById('modal-overlay').classList.add('hidden');
-}
-
 function openModal(id) {
   const s = (window._allSegments || []).find(x => x.id === id);
   if (!s) return;
@@ -2710,8 +2737,6 @@ function enterEditMode(s) {
   document.getElementById('edit-reveal').value = s.revealText || '';
   document.getElementById('edit-status').value = s.status || 'published';
   document.getElementById('edit-playable').checked = s.playable !== false;
-  // Compile fulltext display
-  compileEditFullText(s.entries || []);
 
   renderEditEntries(s.entries || []);
   document.getElementById('modal-edit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2755,8 +2780,6 @@ function compileEditFullText(entries) {
   const reveal = (document.getElementById('edit-reveal')?.value || '').trim();
   const opts = (entries || window._editEntries || []).map((e, i) => `#${i+1} — ${e.text}`).join('\n');
   const full = [setup, opts, reveal].filter(Boolean).join('\n\n');
-  const ft = document.getElementById('edit-fulltext');
-  if (ft) ft.value = full;
 }
 
 function removeEditEntry(i) {
@@ -2787,10 +2810,10 @@ async function saveEdit() {
     : tsNum ? `ts-${tsNum}-${filmSlug}` : null;
 
   try {
-    compileEditFullText(window._editEntries);
     const setupText = (document.getElementById('edit-setup')?.value || '').trim();
     const revealText = (document.getElementById('edit-reveal')?.value || '').trim();
     const optionsText = (window._editEntries || []).map((e, i) => `#${i+1} — ${e.text}`).join('\n');
+    const fullText = [setupText, optionsText, revealText].filter(Boolean).join('\n\n');
     const ref = window._doc(window._db, 'segments', window._editingId);
     await window._setDoc(ref, {
       tsNumber: tsNum,
@@ -2803,7 +2826,7 @@ async function saveEdit() {
       setupText,
       revealText,
       optionsText,
-      fullText: document.getElementById('edit-fulltext').value.trim(),
+      fullText,
       status: document.getElementById('edit-status').value,
       playable: document.getElementById('edit-playable').checked,
       segmentId,
@@ -2822,7 +2845,6 @@ async function saveEdit() {
   }
 }
 
-function closeModal(e) { if (e.target.id === 'modal-overlay') closeModalDirect(); }
 function closeModalDirect() { document.getElementById('modal-overlay').classList.add('hidden'); }
 
 async function deleteSegment(id) {
@@ -2910,6 +2932,15 @@ function toggleExport() {
   body.classList.toggle('hidden', !isHidden);
   btn.classList.toggle('open', isHidden);
   btn.textContent = (isHidden ? '▼' : '▶') + ' Export Library JSON';
+}
+
+function forceRefresh() {
+  if ('serviceWorker' in navigator) {
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => { toast('Cache cleared — reloading...'); setTimeout(() => location.reload(true), 800); });
+  } else {
+    location.reload(true);
+  }
 }
 
 async function exportLibrary() {
