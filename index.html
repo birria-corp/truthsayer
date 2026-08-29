@@ -1843,10 +1843,6 @@
           <label class="modal-edit-label">Episode #</label>
           <input type="number" class="modal-edit-input" id="edit-ep-num">
         </div>
-        <div class="modal-edit-field">
-          <label class="modal-edit-label">Record Date</label>
-          <input type="date" class="modal-edit-input" id="edit-record-date">
-        </div>
       </div>
       <div class="modal-edit-row" style="margin-bottom:0.875rem">
         <div class="modal-edit-field">
@@ -1887,14 +1883,7 @@
         <label class="modal-edit-label">Entries</label>
         <div id="edit-entries-container"></div>
       </div>
-      <div class="modal-edit-field" style="margin-bottom:0.875rem">
-        <label class="modal-edit-label">True Story Summary</label>
-        <input type="text" class="modal-edit-input" id="edit-true-story">
-      </div>
-      <div class="modal-edit-field" style="margin-bottom:0.875rem">
-        <label class="modal-edit-label">Closer</label>
-        <input type="text" class="modal-edit-input" id="edit-closer">
-      </div>
+
       <div class="modal-edit-field" style="margin-bottom:1rem">
         <label class="modal-edit-label">Full Segment Text</label>
         <textarea class="modal-edit-textarea" id="edit-fulltext"></textarea>
@@ -1978,7 +1967,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.1';
+const APP_VERSION = '4.2';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2713,16 +2702,16 @@ function enterEditMode(s) {
 
   document.getElementById('edit-ts-num').value = s.tsNumber || '';
   document.getElementById('edit-ep-num').value = s.episodeNumber || '';
-  document.getElementById('edit-record-date').value = s.recordDate || '';
   document.getElementById('edit-air-date').value = s.airDate || '';
   document.getElementById('edit-film').value = s.film || '';
   document.getElementById('edit-topic').value = s.topic || '';
   document.getElementById('edit-variant').value = s.variant || 'standard';
-  document.getElementById('edit-true-story').value = s.trueStory || '';
-  document.getElementById('edit-closer').value = s.closer || '';
-  document.getElementById('edit-fulltext').value = s.fullText || '';
+  document.getElementById('edit-setup').value = s.setupText || '';
+  document.getElementById('edit-reveal').value = s.revealText || '';
   document.getElementById('edit-status').value = s.status || 'published';
   document.getElementById('edit-playable').checked = s.playable !== false;
+  // Compile fulltext display
+  compileEditFullText(s.entries || []);
 
   renderEditEntries(s.entries || []);
   document.getElementById('modal-edit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2740,8 +2729,8 @@ function renderEditEntries(entryList) {
       <div class="edit-entry-fields">
         <textarea class="modal-edit-input" rows="2" style="min-height:0;font-family:var(--font-body)" oninput="window._editEntries[${i}].text=this.value">${esc(e.text)}</textarea>
         <label class="edit-entry-true">
-          <input type="radio" name="edit-true-entry" ${e.isTrue ? 'checked' : ''} onchange="setEditTrue(${i})">
-          <span>True entry</span>
+          <input type="checkbox" ${e.isTrue ? 'checked' : ''} onchange="window._editEntries[${i}].isTrue=this.checked; compileEditFullText(window._editEntries);">
+          <span>Correct Option</span>
         </label>
       </div>
       <button class="btn btn-ghost btn-sm" style="margin-top:0.25rem" onclick="removeEditEntry(${i})" ${window._editEntries.length <= 2 ? 'disabled' : ''}>✕</button>
@@ -2759,6 +2748,15 @@ function renderEditEntries(entryList) {
 function setEditTrue(i) {
   window._editEntries.forEach((e, idx) => e.isTrue = (idx === i));
   renderEditEntries(window._editEntries);
+}
+
+function compileEditFullText(entries) {
+  const setup = (document.getElementById('edit-setup')?.value || '').trim();
+  const reveal = (document.getElementById('edit-reveal')?.value || '').trim();
+  const opts = (entries || window._editEntries || []).map((e, i) => `#${i+1} — ${e.text}`).join('\n');
+  const full = [setup, opts, reveal].filter(Boolean).join('\n\n');
+  const ft = document.getElementById('edit-fulltext');
+  if (ft) ft.value = full;
 }
 
 function removeEditEntry(i) {
@@ -2789,18 +2787,22 @@ async function saveEdit() {
     : tsNum ? `ts-${tsNum}-${filmSlug}` : null;
 
   try {
+    compileEditFullText(window._editEntries);
+    const setupText = (document.getElementById('edit-setup')?.value || '').trim();
+    const revealText = (document.getElementById('edit-reveal')?.value || '').trim();
+    const optionsText = (window._editEntries || []).map((e, i) => `#${i+1} — ${e.text}`).join('\n');
     const ref = window._doc(window._db, 'segments', window._editingId);
     await window._setDoc(ref, {
       tsNumber: tsNum,
       episodeNumber: epNum,
-      recordDate: document.getElementById('edit-record-date').value || null,
       airDate: document.getElementById('edit-air-date').value || null,
       film,
       topic: document.getElementById('edit-topic').value.trim(),
       variant: document.getElementById('edit-variant').value,
       entries: window._editEntries,
-      trueStory: document.getElementById('edit-true-story').value.trim(),
-      closer: document.getElementById('edit-closer').value.trim(),
+      setupText,
+      revealText,
+      optionsText,
       fullText: document.getElementById('edit-fulltext').value.trim(),
       status: document.getElementById('edit-status').value,
       playable: document.getElementById('edit-playable').checked,
