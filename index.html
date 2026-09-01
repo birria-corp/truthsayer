@@ -1,4 +1,4 @@
-<!-- v2.7b cache bust -->
+<!-- v4.5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1563,6 +1563,91 @@
     min-height: 120px;
   }
 
+  /* ── AUDIO PLAYER ── */
+  .audio-player {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .audio-play-btn {
+    background: var(--gold);
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: #000;
+    transition: opacity 0.15s;
+  }
+  .audio-play-btn:hover { opacity: 0.85; }
+  .audio-progress-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .audio-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .audio-progress-bar {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    cursor: pointer;
+    outline: none;
+  }
+  .audio-progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+  }
+  .audio-time {
+    font-size: 0.7rem;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .audio-upload-row {
+    margin-bottom: 0.875rem;
+  }
+  .audio-upload-row-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    margin-bottom: 0.375rem;
+  }
+  .audio-upload-btn-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .audio-upload-status {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .audio-upload-input { display: none; }
+
 </style>
 </head>
 <body>
@@ -1571,7 +1656,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version" id="app-version-display">v2.7</span>
+    <span class="header-version" id="app-version-display">v4.5</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -1841,10 +1926,12 @@
     <div class="modal-meta" id="modal-meta"></div>
     <div class="segment-id-display" id="modal-segment-id"></div>
     <p class="modal-section-label">Setup</p>
+    <div id="modal-audio-q"></div>
     <div class="modal-fulltext" id="modal-setup"></div>
     <p class="modal-section-label">Options</p>
     <div id="modal-entries"></div>
     <p class="modal-section-label">Reveal</p>
+    <div id="modal-audio-a"></div>
     <div class="modal-fulltext modal-reveal" id="modal-reveal"></div>
     <div class="modal-actions" id="modal-actions"></div>
 
@@ -1919,6 +2006,9 @@
         <label for="edit-playable">Playable in The Game</label>
       </div>
 
+      <!-- Audio -->
+      <div class="modal-edit-section" id="audio-upload-section"></div>
+
       <div style="display:flex;gap:0.75rem;padding-top:0.875rem;border-top:1px solid var(--border)">
         <button class="btn btn-ghost btn-sm" onclick="cancelEdit()">Cancel</button>
         <div style="flex:1"></div>
@@ -1936,6 +2026,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore, collection, doc, addDoc, setDoc, getDocs, getDoc, deleteDoc, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCrTmJNohK-7_t2BHx70HA6AfLmZyryLUY",
@@ -1949,10 +2040,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 window._auth = auth;
 window._db = db;
+window._storage = storage;
+window._storageRef = storageRef;
+window._uploadBytes = uploadBytes;
+window._getDownloadURL = getDownloadURL;
 window._provider = provider;
 window._signInWithPopup = signInWithPopup;
 window._signInWithRedirect = signInWithRedirect;
@@ -1998,7 +2094,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.5';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2209,6 +2305,16 @@ function compileFullText() {
   if (ft) { ft.value = full; updateWordCount(); }
 }
 
+function updateSegmentIdPreview() {
+  const ep = document.getElementById('f-ep-num').value;
+  const ts = document.getElementById('f-ts-num').value;
+  const film = document.getElementById('f-film').value.trim();
+  const slug = film.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'film-title';
+  const preview = ep ? `ep-${ep}-${slug}` : ts ? `ts-${ts}-${slug}` : `ep-???-${slug}`;
+  const el = document.getElementById('segment-id-preview');
+  if (el) el.textContent = preview;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Sync header version display with APP_VERSION constant
   const vEl = document.getElementById('app-version-display');
@@ -2217,17 +2323,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initEntries();
   setDefaultDate();
   // fulltext is auto-compiled — no direct listener needed
-
-  // Live segment ID preview
-  function updateSegmentIdPreview() {
-    const ep = document.getElementById('f-ep-num').value;
-    const ts = document.getElementById('f-ts-num').value;
-    const film = document.getElementById('f-film').value.trim();
-    const slug = film.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'film-title';
-    const preview = ep ? `ep-${ep}-${slug}` : ts ? `ts-${ts}-${slug}` : `ep-???-${slug}`;
-    const el = document.getElementById('segment-id-preview');
-    if (el) el.textContent = preview;
-  }
 
   ['f-ep-num','f-ts-num','f-film'].forEach(id => {
     const el = document.getElementById(id);
@@ -2473,7 +2568,10 @@ function renderGameCard(s) {
 
   // Use stored setupText/revealText fields if available
   const introText = s.setupText || (s.fullText || '').split(/\n#1\s*[—-]/)[0].trim();
-  const revealText = s.revealText || s.trueStory || '';
+  const revealText = s.revealText || '';
+
+  const qAudioHtml = s.questionAudioUrl ? makeAudioPlayer(s.questionAudioUrl, 'Q Audio', 'game-q') : '';
+  const aAudioHtml = s.revealAudioUrl ? makeAudioPlayer(s.revealAudioUrl, 'A Audio', 'game-a') : '';
 
   document.getElementById('game-card-content').innerHTML = `
     <div class="game-card-header">
@@ -2484,6 +2582,7 @@ function renderGameCard(s) {
       </div>
       <div class="game-meta-film">${esc(s.film)}</div>
     </div>
+    ${qAudioHtml}
     <div class="game-intro-text">${esc(introText)}</div>
     <div class="game-card-entries" id="gc-entries">
       ${entries.map((e, i) => `
@@ -2500,6 +2599,7 @@ function renderGameCard(s) {
   window._gameSelected = null;
   window._gameSubmitted = false;
   window._gameRevealText = revealText;
+  window._gameRevealAudio = aAudioHtml;
 }
 
 function selectGameEntry(btn, index) {
@@ -2536,11 +2636,14 @@ function submitGameGuess() {
   const submitBtn = document.getElementById('gc-submit');
   if (submitBtn) submitBtn.style.display = 'none';
 
-  // Show reveal text
+  // Show reveal (A audio + text)
   const revealEl = document.getElementById('gc-reveal');
   if (revealEl) {
     revealEl.className = 'game-card-reveal show';
-    revealEl.innerHTML = `<div class="gc-reveal-text">${esc(window._gameRevealText || s.trueStory || '')}</div>`;
+    const revealText = window._gameRevealText || '';
+    revealEl.innerHTML =
+      (window._gameRevealAudio || '') +
+      (revealText ? `<div class="gc-reveal-text">${esc(revealText)}</div>` : '');
   }
 
   // Show play again
@@ -2650,11 +2753,17 @@ function openModal(id) {
   const revealEl = document.getElementById('modal-reveal');
   if (isAdminUser) {
     if (setupEl) setupEl.textContent = s.setupText || s.fullText || 'No setup text saved.';
-    if (revealEl) revealEl.textContent = s.revealText || s.trueStory || '';
+    if (revealEl) revealEl.textContent = s.revealText || '';
   } else {
     if (setupEl) setupEl.textContent = s.setupText || '';
     if (revealEl) revealEl.textContent = '';
   }
+
+  // Audio players in view mode
+  const qWrap = document.getElementById('modal-audio-q');
+  const aWrap = document.getElementById('modal-audio-a');
+  if (qWrap) qWrap.innerHTML = s.questionAudioUrl ? makeAudioPlayer(s.questionAudioUrl, 'Q Audio', 'modal-q') : '';
+  if (aWrap) aWrap.innerHTML = (isAdminUser && s.revealAudioUrl) ? makeAudioPlayer(s.revealAudioUrl, 'A Audio', 'modal-a') : '';
 
   const actions = document.getElementById('modal-actions');
   actions.innerHTML = '';
@@ -2739,6 +2848,7 @@ function enterEditMode(s) {
   document.getElementById('edit-playable').checked = s.playable !== false;
 
   renderEditEntries(s.entries || []);
+  renderAudioUploadUI(s);
   document.getElementById('modal-edit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -2850,7 +2960,140 @@ function closeModal(e) {
     closeModalDirect();
   }
 }
-function closeModalDirect() { document.getElementById('modal-overlay').classList.add('hidden'); }
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+  // Pause any playing audio
+  document.querySelectorAll('.audio-el').forEach(a => a.pause());
+}
+
+// ── AUDIO PLAYER ──
+window._audioEls = {};
+
+function makeAudioPlayer(url, label, id) {
+  return `
+    <div class="audio-player" id="audio-player-${id}">
+      <audio class="audio-el" id="audio-el-${id}" src="${url}" preload="metadata"
+        ontimeupdate="updateAudioProgress('${id}')"
+        onended="audioEnded('${id}')"
+        onloadedmetadata="updateAudioProgress('${id}')"></audio>
+      <button class="audio-play-btn" id="audio-play-btn-${id}" onclick="toggleAudio('${id}')">▶</button>
+      <div class="audio-progress-wrap">
+        <div class="audio-label">${label}</div>
+        <input type="range" class="audio-progress-bar" id="audio-bar-${id}"
+          min="0" max="100" value="0" step="0.1"
+          oninput="seekAudio('${id}', this.value)">
+      </div>
+      <span class="audio-time" id="audio-time-${id}">0:00</span>
+    </div>`;
+}
+
+function toggleAudio(id) {
+  const el = document.getElementById('audio-el-' + id);
+  const btn = document.getElementById('audio-play-btn-' + id);
+  if (!el) return;
+  // Pause all others
+  document.querySelectorAll('.audio-el').forEach(a => { if (a.id !== 'audio-el-' + id) { a.pause(); } });
+  document.querySelectorAll('.audio-play-btn').forEach(b => { if (b.id !== 'audio-play-btn-' + id) b.textContent = '▶'; });
+  if (el.paused) { el.play(); if (btn) btn.textContent = '⏸'; }
+  else { el.pause(); if (btn) btn.textContent = '▶'; }
+}
+
+function updateAudioProgress(id) {
+  const el = document.getElementById('audio-el-' + id);
+  const bar = document.getElementById('audio-bar-' + id);
+  const timeEl = document.getElementById('audio-time-' + id);
+  if (!el) return;
+  const dur = el.duration || 0;
+  const cur = el.currentTime || 0;
+  if (bar && dur > 0) bar.value = (cur / dur) * 100;
+  if (timeEl) {
+    const fmt = t => `${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+    timeEl.textContent = dur > 0 ? `${fmt(cur)} / ${fmt(dur)}` : '0:00';
+  }
+}
+
+function audioEnded(id) {
+  const btn = document.getElementById('audio-play-btn-' + id);
+  const bar = document.getElementById('audio-bar-' + id);
+  if (btn) btn.textContent = '▶';
+  if (bar) bar.value = 0;
+}
+
+function seekAudio(id, val) {
+  const el = document.getElementById('audio-el-' + id);
+  if (!el || !el.duration) return;
+  el.currentTime = (val / 100) * el.duration;
+}
+
+// ── AUDIO UPLOAD ──
+async function uploadAudio(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const id = window._editingId;
+  if (!id) { toast('No segment selected'); return; }
+  if (!window._storage) { toast('Storage not ready'); return; }
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  const allowed = ['m4a', 'mp3', 'wav'];
+  if (!allowed.includes(ext)) { toast('Use .m4a, .mp3, or .wav'); return; }
+
+  const statusEl = document.getElementById(`audio-upload-status-${type}`);
+  if (statusEl) statusEl.textContent = 'Uploading…';
+
+  try {
+    const path = `segments/${id}/${type === 'question' ? 'question' : 'reveal'}.${ext}`;
+    const ref = window._storageRef(window._storage, path);
+    await window._uploadBytes(ref, file);
+    const url = await window._getDownloadURL(ref);
+
+    // Write URL back to Firestore
+    const field = type === 'question' ? 'questionAudioUrl' : 'revealAudioUrl';
+    const docRef = window._doc(window._db, 'segments', id);
+    await window._setDoc(docRef, { [field]: url }, { merge: true });
+
+    // Update local segment cache
+    const seg = (window._allSegments || []).find(s => s.id === id);
+    if (seg) seg[field] = url;
+    window._editingSegment = seg;
+
+    if (statusEl) statusEl.textContent = '✓ Uploaded';
+    // Replace upload row with player
+    const playerWrap = document.getElementById(`audio-player-wrap-${type}`);
+    if (playerWrap) playerWrap.innerHTML = makeAudioPlayer(url, type === 'question' ? 'Q Audio' : 'A Audio', `edit-${type}`);
+    toast('Audio uploaded ✓');
+  } catch(e) {
+    if (statusEl) statusEl.textContent = 'Upload failed';
+    toast('Upload failed: ' + e.message);
+  }
+}
+
+function renderAudioUploadUI(s) {
+  const container = document.getElementById('audio-upload-section');
+  if (!container) return;
+
+  const makeRow = (type, label, existingUrl) => {
+    const inputId = `audio-file-input-${type}`;
+    const existingPlayer = existingUrl
+      ? makeAudioPlayer(existingUrl, label, `edit-${type}`)
+      : '';
+    return `
+      <div class="audio-upload-row">
+        <div class="audio-upload-row-label">${label}</div>
+        <div id="audio-player-wrap-${type}">${existingPlayer}</div>
+        <div class="audio-upload-btn-row">
+          <input type="file" class="audio-upload-input" id="${inputId}" accept=".m4a,.mp3,.wav" onchange="uploadAudio(event,'${type}')">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('${inputId}').click()">
+            ${existingUrl ? 'Replace audio' : 'Upload audio'}
+          </button>
+          <span class="audio-upload-status" id="audio-upload-status-${type}"></span>
+        </div>
+      </div>`;
+  };
+
+  container.innerHTML =
+    makeRow('question', 'Q Audio', s.questionAudioUrl || '') +
+    makeRow('reveal', 'A Audio', s.revealAudioUrl || '');
+}
 
 async function deleteSegment(id) {
   if (!confirm('Delete this segment? Cannot be undone.')) return;
