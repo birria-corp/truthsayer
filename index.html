@@ -1027,8 +1027,10 @@
   .card-middle {
     flex: 1;
     display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.05rem;
     min-width: 0;
     overflow: hidden;
   }
@@ -1038,23 +1040,21 @@
     color: var(--text);
     font-weight: 500;
     white-space: nowrap;
-    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
-  .card-sep {
-    color: var(--dim);
-    font-size: 0.75rem;
-    flex-shrink: 0;
-  }
+  .card-sep { display: none; }
 
   .card-topic-inline {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: var(--muted);
     font-style: italic;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-width: 0;
+    max-width: 100%;
   }
 
   .card-actions {
