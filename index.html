@@ -419,6 +419,32 @@
 
   .segment-card:hover { border-color: var(--gold-dim); }
 
+  .card-btn-play {
+    background: transparent;
+    border: 1.5px solid #4caf7d;
+    color: #4caf7d;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: background 0.15s, color 0.15s;
+  }
+  .card-btn-play:hover { background: #4caf7d; color: #000; }
+
+  .card-btn-view {
+    background: transparent;
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    font-size: 0.78rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: background 0.15s, color 0.15s;
+  }
+  .card-btn-view:hover { background: var(--gold); color: #000; }
+
   .card-header {
     display: flex;
     align-items: baseline;
@@ -971,7 +997,7 @@
     min-width: 5.5rem;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 0.15rem;
     min-width: 5rem;
   }
@@ -1301,6 +1327,7 @@
     justify-content: center;
     min-height: 60vh;
     padding: 2rem;
+    position: relative;
   }
 
   .game-logo-btn {
@@ -1900,6 +1927,7 @@
       </button>
     </div>
     <div class="game-view" id="game-playing" style="display:none">
+      <button id="exit-preview-btn" onclick="exitPreview()" style="display:none;position:absolute;top:1rem;left:1rem;background:transparent;border:1.5px solid var(--muted);color:var(--muted);font-size:0.8rem;padding:0.3rem 0.8rem;border-radius:4px;cursor:pointer;z-index:10">← Back to Segment</button>
       <div class="game-card" id="game-card-content"></div>
     </div>
   </div>
@@ -2094,7 +2122,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.5';
+const APP_VERSION = '4.6';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2513,7 +2541,7 @@ function filterArchive() {
         </div>`;
     }
     return `
-      <div class="segment-card" onclick="openModal('${s.id}')">
+      <div class="segment-card">
         <div class="card-header" style="align-items:flex-start">
           <div class="card-left">
             <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
@@ -2523,8 +2551,12 @@ function filterArchive() {
             <div class="card-film-title">${esc(s.film)}</div>
             ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
           </div>
-          <div class="card-right">
-            <div class="card-dates">
+          <div class="card-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem">
+            <div style="display:flex;gap:0.4rem;align-items:center">
+              ${s.playable !== false && s.questionAudioUrl ? `<button class="card-btn-play" onclick="event.stopPropagation();previewGame('${s.id}')">▶ Play</button>` : ''}
+              <button class="card-btn-view" onclick="event.stopPropagation();openModal('${s.id}')">View</button>
+            </div>
+            <div class="card-dates" style="margin-top:0.1rem">
               <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
             </div>
             <span class="card-status-bottom status-${s.status}">${s.status}</span>
@@ -2538,6 +2570,7 @@ function filterArchive() {
 
 // ── THE GAME ──
 let _gameCurrentSegment = null;
+let _previewSourceId = null;
 
 function getPlayableSegments() {
   return (window._allSegments || []).filter(s =>
@@ -2561,6 +2594,9 @@ function startGame() {
   renderGameCard(s);
   document.getElementById('game-landing').style.display = 'none';
   document.getElementById('game-playing').style.display = 'flex';
+  _previewSourceId = null;
+  const exitBtn = document.getElementById('exit-preview-btn');
+  if (exitBtn) exitBtn.style.display = 'none';
 }
 
 function renderGameCard(s) {
@@ -2655,6 +2691,7 @@ function previewGame(id) {
   const s = (window._allSegments || []).find(x => x.id === id);
   if (!s) return;
   _gameCurrentSegment = s;
+  _previewSourceId = id;
   closeModal();
   showView('game');
   // Wait for view to render then populate
@@ -2664,7 +2701,17 @@ function previewGame(id) {
     const playing = document.getElementById('game-playing');
     if (landing) landing.style.display = 'none';
     if (playing) playing.style.display = 'flex';
+    // Show exit preview button
+    const exitBtn = document.getElementById('exit-preview-btn');
+    if (exitBtn) exitBtn.style.display = 'inline-flex';
   }, 50);
+}
+
+function exitPreview() {
+  _previewSourceId && openModal(_previewSourceId);
+  _previewSourceId = null;
+  const exitBtn = document.getElementById('exit-preview-btn');
+  if (exitBtn) exitBtn.style.display = 'none';
 }
 
 // ── ARCHIVE FIX ──
