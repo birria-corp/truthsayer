@@ -1,4 +1,4 @@
-<!-- v4.7 -->
+<!-- v4.6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -423,12 +423,11 @@
     background: transparent;
     border: 1.5px solid #4caf7d;
     color: #4caf7d;
-    font-size: 0.72rem;
-    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 4px;
     cursor: pointer;
     font-family: var(--font-mono);
-    line-height: 1.4;
     transition: background 0.15s, color 0.15s;
   }
   .card-btn-play:hover { background: #4caf7d; color: #000; }
@@ -437,12 +436,11 @@
     background: transparent;
     border: 1.5px solid var(--gold);
     color: var(--gold);
-    font-size: 0.72rem;
-    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 4px;
     cursor: pointer;
     font-family: var(--font-mono);
-    line-height: 1.4;
     transition: background 0.15s, color 0.15s;
   }
   .card-btn-view:hover { background: var(--gold); color: #000; }
@@ -994,90 +992,57 @@
     flex-wrap: wrap;
   }
 
-  /* ── SEGMENT CARD v3 — single row ── */
-  .card-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
+  /* ── SEGMENT CARD v2 ── */
   .card-left {
-    min-width: 5rem;
+    min-width: 5.5rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.15rem;
-    flex-shrink: 0;
+    min-width: 5rem;
   }
 
   .card-ep {
     font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: var(--gold);
-    line-height: 1.3;
   }
 
   .card-num {
     font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: var(--gold);
-    line-height: 1.3;
   }
 
-  .card-middle {
-    flex: 1;
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    min-width: 0;
-    overflow: hidden;
-  }
+  .card-center { flex: 1; }
 
   .card-film-title {
-    font-size: 0.97rem;
+    font-size: 1rem;
     color: var(--text);
     font-weight: 500;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .card-sep {
-    color: var(--dim);
-    font-size: 0.75rem;
-    flex-shrink: 0;
   }
 
   .card-topic-inline {
     font-size: 0.82rem;
     color: var(--muted);
     font-style: italic;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
+    margin-top: 0.15rem;
   }
 
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    flex-shrink: 0;
-  }
-
-  .card-meta {
+  .card-right {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.25rem;
-    flex-shrink: 0;
+    justify-content: space-between;
+    gap: 0.15rem;
   }
 
-  .card-airdate {
-    font-size: 0.75rem;
-    color: var(--muted);
-    white-space: nowrap;
+  .card-dates {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
   }
-  .card-airdate span { color: var(--dim); }
 
   .card-status-bottom {
     display: inline-block;
@@ -1086,13 +1051,8 @@
     border-radius: 3px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin-top: 0;
+    margin-top: 0.25rem;
   }
-
-  /* legacy classes kept for modal/archive compatibility */
-  .card-center { flex: 1; }
-  .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
-  .card-dates { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
 
   @media (max-width: 600px) {
     .library-hero { grid-template-columns: 1fr; min-height: auto; }
@@ -1723,7 +1683,7 @@
   <div class="header-brand">
     <img src="icon.png" alt="Truthsayer" class="header-logo">
     <span class="header-title">Truthsayer</span>
-    <span class="header-version" id="app-version-display">v4.7</span>
+    <span class="header-version" id="app-version-display">v4.6</span>
   </div>
   <div class="header-right">
     <span id="auth-user"></span>
@@ -2162,7 +2122,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.6';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2565,17 +2525,16 @@ function filterArchive() {
     if (comingSoon) {
       return `
         <div class="segment-card card-coming-soon">
-          <div class="card-row">
+          <div class="card-header" style="align-items:flex-start">
             <div class="card-left">
               <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
               <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
             </div>
-            <div class="card-middle">
-              <span class="card-film-title">${esc(s.film)}</span>
-              <span class="card-sep">·</span>
-              <span class="card-topic-inline">Airing ${formatDate(s.airDate)}</span>
+            <div class="card-center">
+              <div class="coming-soon-film">${esc(s.film)}</div>
+              <div class="coming-soon-air">Airing ${formatDate(s.airDate)}</div>
             </div>
-            <div class="card-actions">
+            <div class="card-right">
               <span class="coming-soon-label">Coming Soon</span>
             </div>
           </div>
@@ -2583,21 +2542,23 @@ function filterArchive() {
     }
     return `
       <div class="segment-card">
-        <div class="card-row">
+        <div class="card-header" style="align-items:flex-start">
           <div class="card-left">
             <span class="card-ep">${s.episodeNumber ? 'Ep ' + s.episodeNumber : ''}</span>
             <span class="card-num">${s.tsNumber ? 'TS-' + s.tsNumber : 'TS-?'}</span>
           </div>
-          <div class="card-middle">
-            <span class="card-film-title">${esc(s.film)}</span>
-            ${s.topic ? `<span class="card-sep">·</span><span class="card-topic-inline">${esc(s.topic)}</span>` : ''}
+          <div class="card-center">
+            <div class="card-film-title">${esc(s.film)}</div>
+            ${s.topic ? `<div class="card-topic-inline">${esc(s.topic)}</div>` : ''}
           </div>
-          <div class="card-actions">
-            ${s.playable !== false && s.questionAudioUrl && s.status === 'published' && s.entries && s.entries.some(e => e.isTrue) ? `<button class="card-btn-play" onclick="event.stopPropagation();previewGame('${s.id}')">▶ Play</button>` : ''}
-            <button class="card-btn-view" onclick="event.stopPropagation();openModal('${s.id}')">View</button>
-          </div>
-          <div class="card-meta">
-            <span class="card-airdate"><span>Air</span> ${formatDate(s.airDate)}</span>
+          <div class="card-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem">
+            <div style="display:flex;gap:0.4rem;align-items:center">
+              ${s.playable !== false && s.questionAudioUrl && s.status === 'published' && s.entries && s.entries.some(e => e.isTrue) ? `<button class="card-btn-play" onclick="event.stopPropagation();previewGame('${s.id}')">▶ Play</button>` : ''}
+              <button class="card-btn-view" onclick="event.stopPropagation();openModal('${s.id}')">View</button>
+            </div>
+            <div class="card-dates" style="margin-top:0.1rem">
+              <div class="recent-date-pair"><span>Air</span>${formatDate(s.airDate)}</div>
+            </div>
             <span class="card-status-bottom status-${s.status}">${s.status}</span>
           </div>
         </div>
