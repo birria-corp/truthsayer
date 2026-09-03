@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'truthsayer-v4.7';
+const CACHE_VERSION = 'truthsayer-v4.8';
 const NETWORK_FIRST = ['index.html', 'version.json', 'sw.js'];
 
 self.addEventListener('install', e => {
@@ -21,7 +21,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   // Always network-first for HTML, version check, and sw itself
-  const isNetworkFirst = NETWORK_FIRST.some(f => url.pathname.endsWith(f))
+  const isNetworkFirst = NETWORK_FIRST.some(f => url.pathname.endsWith(f)) 
     || url.pathname === '/truthsayer/'
     || url.pathname === '/truthsayer';
 

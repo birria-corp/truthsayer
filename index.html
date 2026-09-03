@@ -97,6 +97,9 @@
     display: flex;
     overflow-x: auto;
     scrollbar-width: none;
+    position: sticky;
+    top: 68px;
+    z-index: 99;
   }
 
   #app-nav::-webkit-scrollbar { display: none; }
@@ -432,6 +435,19 @@
     transition: background 0.15s, color 0.15s;
   }
   .card-btn-play:hover { background: #4caf7d; color: #000; }
+
+  .card-btn-audio {
+    background: transparent;
+    border: 1.5px solid #5ba3e8;
+    color: #5ba3e8;
+    font-size: 0.82rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 1.4;
+    transition: background 0.15s, color 0.15s;
+  }
+  .card-btn-audio:hover { background: #5ba3e8; color: #000; }
 
   .card-btn-view {
     background: transparent;
@@ -1993,6 +2009,7 @@
     <div class="modal-film" id="modal-film"></div>
     <div class="modal-meta" id="modal-meta"></div>
     <div class="segment-id-display" id="modal-segment-id"></div>
+    <div id="modal-audio-special"></div>
     <p class="modal-section-label">Setup</p>
     <div id="modal-audio-q"></div>
     <div class="modal-fulltext" id="modal-setup"></div>
@@ -2162,7 +2179,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.8';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2593,7 +2610,8 @@ function filterArchive() {
             ${s.topic ? `<span class="card-sep">·</span><span class="card-topic-inline">${esc(s.topic)}</span>` : ''}
           </div>
           <div class="card-actions">
-            ${s.playable !== false && s.questionAudioUrl && s.status === 'published' && s.entries && s.entries.some(e => e.isTrue) ? `<button class="card-btn-play" onclick="event.stopPropagation();previewGame('${s.id}')">▶ Play</button>` : ''}
+            ${(s.questionAudioUrl || s.revealAudioUrl || s.specialAudioUrl) ? `<button class="card-btn-audio" onclick="event.stopPropagation();${s.playable !== false && s.status === 'published' && s.entries && s.entries.some(e => e.isTrue) ? `previewGame('${s.id}')` : `openModal('${s.id}')`}" title="Has audio">🔊</button>` : ''}
+            ${s.playable !== false && s.status === 'published' && s.entries && s.entries.some(e => e.isTrue) ? `<button class="card-btn-play" onclick="event.stopPropagation();previewGame('${s.id}')">Game</button>` : ''}
             <button class="card-btn-view" onclick="event.stopPropagation();openModal('${s.id}')">View</button>
           </div>
           <div class="card-meta">
@@ -2645,6 +2663,7 @@ function renderGameCard(s) {
   const introText = s.setupText || (s.fullText || '').split(/\n#1\s*[—-]/)[0].trim();
   const revealText = s.revealText || '';
 
+  const spAudioHtml = s.specialAudioUrl ? makeAudioPlayer(s.specialAudioUrl, 'Special Audio', 'game-special') : '';
   const qAudioHtml = s.questionAudioUrl ? makeAudioPlayer(s.questionAudioUrl, 'Q Audio', 'game-q') : '';
   const aAudioHtml = s.revealAudioUrl ? makeAudioPlayer(s.revealAudioUrl, 'A Audio', 'game-a') : '';
 
@@ -2657,6 +2676,7 @@ function renderGameCard(s) {
       </div>
       <div class="game-meta-film">${esc(s.film)}</div>
     </div>
+    ${spAudioHtml}
     ${qAudioHtml}
     <div class="game-intro-text">${esc(introText)}</div>
     <div class="game-card-entries" id="gc-entries">
@@ -2846,8 +2866,10 @@ function openModal(id) {
   }
 
   // Audio players in view mode
+  const spWrap = document.getElementById('modal-audio-special');
   const qWrap = document.getElementById('modal-audio-q');
   const aWrap = document.getElementById('modal-audio-a');
+  if (spWrap) spWrap.innerHTML = s.specialAudioUrl ? makeAudioPlayer(s.specialAudioUrl, 'Special Audio', 'modal-special') : '';
   if (qWrap) qWrap.innerHTML = s.questionAudioUrl ? makeAudioPlayer(s.questionAudioUrl, 'Q Audio', 'modal-q') : '';
   if (aWrap) aWrap.innerHTML = (isAdminUser && s.revealAudioUrl) ? makeAudioPlayer(s.revealAudioUrl, 'A Audio', 'modal-a') : '';
 
@@ -3127,13 +3149,14 @@ async function uploadAudio(event, type) {
   if (statusEl) statusEl.textContent = 'Uploading…';
 
   try {
-    const path = `segments/${id}/${type === 'question' ? 'question' : 'reveal'}.${ext}`;
+    const pathKey = type === 'question' ? 'question' : type === 'reveal' ? 'reveal' : 'special';
+    const path = `segments/${id}/${pathKey}.${ext}`;
     const ref = window._storageRef(window._storage, path);
     await window._uploadBytes(ref, file);
     const url = await window._getDownloadURL(ref);
 
     // Write URL back to Firestore
-    const field = type === 'question' ? 'questionAudioUrl' : 'revealAudioUrl';
+    const field = type === 'question' ? 'questionAudioUrl' : type === 'reveal' ? 'revealAudioUrl' : 'specialAudioUrl';
     const docRef = window._doc(window._db, 'segments', id);
     await window._setDoc(docRef, { [field]: url }, { merge: true });
 
@@ -3144,8 +3167,9 @@ async function uploadAudio(event, type) {
 
     if (statusEl) statusEl.textContent = '✓ Uploaded';
     // Replace upload row with player
+    const labelMap = { question: 'Q Audio', reveal: 'A Audio', special: 'Special Audio' };
     const playerWrap = document.getElementById(`audio-player-wrap-${type}`);
-    if (playerWrap) playerWrap.innerHTML = makeAudioPlayer(url, type === 'question' ? 'Q Audio' : 'A Audio', `edit-${type}`);
+    if (playerWrap) playerWrap.innerHTML = makeAudioPlayer(url, labelMap[type] || type, `edit-${type}`);
     toast('Audio uploaded ✓');
   } catch(e) {
     if (statusEl) statusEl.textContent = 'Upload failed';
@@ -3177,6 +3201,7 @@ function renderAudioUploadUI(s) {
   };
 
   container.innerHTML =
+    makeRow('special', 'Special Audio', s.specialAudioUrl || '') +
     makeRow('question', 'Q Audio', s.questionAudioUrl || '') +
     makeRow('reveal', 'A Audio', s.revealAudioUrl || '');
 }

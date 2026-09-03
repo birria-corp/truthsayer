@@ -2,7 +2,7 @@
 
 A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). Each week, two plausible fictions and one true fact — the audience finds the truth.
 
-**Version:** 4.7
+**Version:** 4.8
 **Live:** https://birria-corp.github.io/truthsayer/
 
 ---
@@ -85,6 +85,7 @@ GitHub Desktop → Pull origin → copy updated files → Commit → Push origin
 
 | Version | Changes |
 |---------|---------|
+| v4.8 | Sticky tab row; Game button (replaces Play, no arrow); blue 🔊 speaker button on cards with audio; specialAudioUrl field support (modal, edit UI, upload, game card) |
 | v4.7 | Library cards redesigned as single compact row — title · topic inline, Play/View/date/status all in one horizontal strip |
 | v4.6 | EP/TS numbers left-justified on library cards; Exit Preview button in game view; ▶ Play + View buttons on each card (published + audio-only); Play button gates on published status + valid entries |
 | v4.5 | Audio migration complete — 174 segments in Firebase Storage; questionAudioUrl + revealAudioUrl in Firestore; audio playback in segment modals and game view |
