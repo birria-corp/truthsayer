@@ -2,7 +2,7 @@
 
 A recurring segment on the podcast [Escape Hatch](https://www.escapehatch.fm). Each week, two plausible fictions and one true fact — the audience finds the truth.
 
-**Version:** 4.8
+**Version:** 5.0
 **Live:** https://birria-corp.github.io/truthsayer/
 
 ---
@@ -85,6 +85,7 @@ GitHub Desktop → Pull origin → copy updated files → Commit → Push origin
 
 | Version | Changes |
 |---------|---------|
+| v5.0 | Library default sort changed to Ep # (was TS #); TS # sort removed; Release Date added as sort option |
 | v4.9 | Mobile card fix — two-row layout on narrow screens (title no longer squeezed); topic hidden on mobile |
 | v4.8 | Sticky tab row; Game button (replaces Play, no arrow); blue 🔊 speaker button on cards with audio; specialAudioUrl field support (modal, edit UI, upload, game card) |
 | v4.7 | Library cards redesigned as single compact row — title · topic inline, Play/View/date/status all in one horizontal strip |

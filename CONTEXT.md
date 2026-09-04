@@ -15,42 +15,63 @@
 - **Status:** Active
 - **Repo:** https://github.com/birria-corp/truthsayer
 - **Live URL:** https://birria-corp.github.io/truthsayer/
-- **Current version:** v2.5
-- **Stack:** Single-file HTML, vanilla JS, Firebase Firestore + Auth, GitHub Pages
+- **Current version:** v5.0
+- **Stack:** Single-file HTML, vanilla JS, Firebase Firestore + Storage + Auth, GitHub Pages
 
 ---
 
 ## Current State
 
 ### Library
-- **158 segments** in Firestore — TS 1–158, fully normalized and audited
-- TS numbers increase with episode numbers — no gaps, no duplicates, no ordering issues
-- TS 14–29 gap is intentional — episodes in that range had no recorded Truthsayer segment
-- Two Dune Part 2 segments share ep 185 (TS 47 and TS 48)
-- Dark Knight (TS-158, ep 319) is status: scheduled, air date Aug 23 2026
+- **166 segments** in Firestore (eps 137–321, with gaps)
+- Firestore doc IDs are **auto-generated** — segmentId is a field on the doc, not the doc ID
+- Library default sort: **Ep # descending**
+- Sort options: Ep #, Film, Release Date
+- TS # is retired as a sort field (non-standard segments don't have one)
+
+### Audio
+- **questionAudioUrl** / **revealAudioUrl** — standard Q/A segments (hosted in Firebase Storage)
+- **specialAudioUrl** — non-standard / monologue segments
+- CORS configured on Storage bucket via `set-cors.js` — browser uploads from GitHub Pages work
+- ~40 new Q/A pairs migrated (eps 231–321) via `migrate-qa-new.js`
+- Special audio migrated for ep-165, ep-227, ep-244, ep-289 via `migrate-special-v2.js`
+- ep-250 renamed: old doc `ep-250-the-empire-strikes-back` deleted; new doc created with correct ID; specialAudioUrl preserved (Storage file path unchanged)
 
 ### Auth / Admin
 - Google sign-in via Firebase Auth
-- Admin UID: `7svXy0VugrT0LgK33R82eHqKp6f2` (zeros at positions 6 and 12, not letter O)
-- ADMIN_UIDS array in index.html — add future admins here
-- Segment Builder tab hidden from non-admins
-- Edit/delete/export gated to admin
+- Admin UID: `ZbRaWy2Ld5MPG0AtzyElphKWUiZ2`
+- Storage rules: `allow write: if request.auth.uid == 'ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'`
+- Firestore rules: `allow write: if request.auth.uid == 'ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'`
+- Admin can upload audio directly from Segment Builder
+
+### Firebase
+- **Project:** zeptrack-f8720 (birria corp apps, Blaze plan)
+- **Firestore collection:** segments
+- **Storage bucket:** gs://zeptrack-f8720.firebasestorage.app
+- **Auth:** Google sign-in
 
 ### Visibility Model
 - `published` — full card, clickable, visible to all
-- `scheduled` — Coming Soon card (title + air date only) for signed-out users; full card for admin; auto-promotes to published display when airDate passes
-- `draft` — hidden from public entirely; visible to admin only
+- `scheduled` — Coming Soon card for signed-out users; full card for admin; auto-promotes when airDate passes
+- `draft` — hidden from public; visible to admin only
+
+### Game Mode
+- Random published segment with audio (questionAudioUrl or specialAudioUrl required)
+- Game button condition: `playable !== false && status === 'published' && entries.some(e => e.isTrue)`
 
 ---
 
 ## Active Features
 
-- **The Library tab** — hero row (logo, Frank Herbert quote, segment count), search, filter, sort, segment cards
-- **Segment cards** — Ep# above TS# (left), film + topic inline (center), Rec/Air dates + status (right)
-- **Modal** — full segment detail; Edit button flips to inline edit mode for admin
-- **Segment Builder tab** (admin only) — new segment form with auto-increment episode#, live segmentId preview, record date + air date fields, JSON import
-- **Bulk Import / Batch Edit** — collapsible toggle section; Import New skips duplicates by tsNumber; Batch Edit matches by `_matchTs` field and merges updates
-- **Export Library JSON** — downloads full Firestore collection sorted by TS# as dated JSON
+- **Library tab** — search, filter by status, sort (Ep #, Film, Release Date)
+- **Segment cards** — compact single-row; speaker 🔊 icon when audio present; Play + View buttons
+- **Two-row mobile layout** — flex-wrap at 600px; title preserved, topic hidden
+- **Sticky tab row**
+- **Modal** — full segment detail; audio players for Q/A and special audio; Edit mode for admin
+- **Segment Builder** (admin only) — new segment form, audio upload to Storage, live segmentId preview
+- **Game tab** — random playable segment; Q/A audio playback; reveal on answer
+- **Export Library JSON** — exports full Firestore collection sorted by Ep # as dated JSON
+- **Auto-update checker** — compares APP_VERSION against version.json on mount
 
 ---
 
@@ -61,20 +82,23 @@
 - `version.json`
 - `CACHE_VERSION` in sw.js
 
-### segmentId format
-- `ep-{episodeNumber}-{film-slug}` when episode number present
-- Falls back to `ts-{tsNumber}-{film-slug}`
+### segmentId format (field, not doc ID)
+- `ep-{episodeNumber}-{film-slug}` — primary format
+- Falls back to `ts-{tsNumber}-{film-slug}` for older segments
+- Firestore doc IDs are auto-generated; always query by segmentId field, not doc ID
 
-### Batch Edit `_matchTs`
-- Batch edit tool matches on `_matchTs` field if present, falls back to `tsNumber`
-- `_matchTs` and `_old_ts` fields stripped before writing to Firestore
+### Sort Default
+- Library: `episodeNumber` descending
+- Archive (admin): `episodeNumber` descending
+- Initial load: sorted by `episodeNumber` ascending
 
 ### Firestore Rules
 - Public: `allow read: if true`
-- Write: `allow write: if request.auth.uid == '7svXy0VugrT0LgK33R82eHqKp6f2'`
+- Write: `allow write: if request.auth.uid == 'ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'`
 
-### Skip Episodes (no Truthsayer segment)
-138, 183, 186, 197, 198, 227, 228, 235, 239, 241, 243, 245, 247, 249, 251, 253, 254, 262, 263, 274, 276, 284, 288, 289, 296, 312
+### Storage CORS
+- Set via `node set-cors.js --key ./serviceAccountKey.json` from `Desktop\FirebaseLoad\`
+- Allows PUT/POST from `https://birria-corp.github.io`
 
 ---
 
@@ -82,19 +106,25 @@
 
 ```json
 {
-  "tsNumber": 158,
-  "episodeNumber": 319,
-  "segmentId": "ep-319-the-dark-knight-2008",
-  "recordDate": "2026-08-18",
-  "airDate": "2026-08-23",
-  "film": "The Dark Knight (2008)",
-  "topic": "True story from Michael Caine's lean years before fame",
+  "segmentId": "ep-321-the-fly-1986",
+  "tsNumber": 163,
+  "episodeNumber": 321,
+  "recordDate": "2026-08-XX",
+  "airDate": "2026-09-XX",
+  "film": "The Fly (1986)",
+  "topic": "...",
   "variant": "standard",
   "entries": [{"text": "...", "isTrue": false}],
   "trueStory": "...",
+  "setupText": "...",
+  "revealText": "...",
   "closer": "...",
   "fullText": "...",
-  "status": "scheduled",
+  "questionAudioUrl": "https://storage.googleapis.com/...",
+  "revealAudioUrl": "https://storage.googleapis.com/...",
+  "specialAudioUrl": null,
+  "status": "published",
+  "playable": true,
   "authorUid": "...",
   "createdAt": "...",
   "updatedAt": "..."
@@ -103,34 +133,55 @@
 
 ---
 
+## Firebase Scripts (Desktop\FirebaseLoad\)
+
+| Script | Purpose |
+|--------|---------|
+| `set-cors.js` | Set CORS on Storage bucket |
+| `batch-update-firestore.js` | Bulk update metadata from JSON export (preserves audio URLs) |
+| `migrate-special-v2.js` | Migrate special audio for specific eps |
+| `migrate-qa-new.js` | Migrate Q/A audio pairs from Drive |
+| `cleanup-old-docs.js` | Remove pre-batch duplicate Firestore docs |
+| `fix-ep231.js` | One-off fix for Constantine entries + revealText |
+| `lookup-ep231.js` | Diagnostic: find doc by episodeNumber |
+
+**Critical:** `batch-update-firestore.js` uses segmentId as the Firestore doc ID key — this creates new docs if a segment's existing doc has an auto-generated ID. Always run `cleanup-old-docs.js` after a batch update to remove the old duplicates.
+
+---
+
+## Open Items
+
+- ep-269 Sorcerer reveal audio — upload manually via admin Segment Builder
+- Point Break Q/A (Drive IDs known) — confirm episode number
+- Trek Q ambiguous (Drive `1HIDGh2NtjngYyJ_MDmbZvLtsWkaqnU0t`) — confirm episode
+
+---
+
 ## Version History
 
 | Version | Changes |
 |---------|---------|
-| v2.5 | Fixed ADMIN_UIDS UID typo (O→0); fixed sign-out auth check; switched to signInWithRedirect |
-| v2.4 | Admin-only Segment Builder; ADMIN_UIDS constant; Truthsayer logo as app icon |
-| v2.3 | Truthsayer artwork logo as icon.png |
-| v2.2 | Scheduled status; Coming Soon cards; draft hidden from public; auto-publish by airDate |
-| v2.1 | Export Library JSON in Segment Builder |
-| v2.0 | Library tab replaces Dashboard + Archive; redesigned segment cards |
-| v1.9 | Bulk Import/Batch Edit toggle |
-| v1.8 | Modal edit mode; Segment Builder rename; auto-increment episode#; segmentId |
-| v1.7 | Dashboard logo; Frank Herbert quote |
-| v1.6 | Archive hides answers; modal shows full text first |
-| v1.5 | Sort controls; dual date display |
-| v1.4 | Duplicate check; auto-clear on bulk import |
-| v1.3 | Drag-and-drop bulk import |
-| v1.2 | 20% UI scale; JSON import for form |
-| v1.1 | PWA with Firebase; dashboard; archive; segment builder |
+| v5.0 | Library default sort changed to Ep # (was TS #); TS # sort removed; Release Date added as sort option |
+| v4.9 | Mobile card two-row layout fix; topic hidden on mobile; CORS enabled for Storage browser uploads |
+| v4.8 | Sticky tab row; Game button; blue 🔊 speaker on audio cards; specialAudioUrl field support |
+| v4.7 | Library cards redesigned as compact single row |
+| v4.6 | EP/TS numbers left-justified; Exit Preview; Play + View buttons on cards |
+| v4.5 | Audio migration complete — 174 segments in Storage; questionAudioUrl + revealAudioUrl in Firestore |
+| v4.4 | Game view with audio; makeAudioPlayer helper |
+| v4.3 | Firestore model adds questionAudioUrl, revealAudioUrl, setupText, revealText |
+| v4.2 | Segment modal shows audio players |
+| v4.1 | Game tab; random segment picker |
+| v4.0 | Firebase migrated to zeptrack-f8720 (Blaze plan); Storage enabled |
+| v2.8–2.5 | Various auth, export, and admin fixes |
+| v2.4 | Admin-only Segment Builder; ADMIN_UIDS |
+| v2.0 | Library tab replaces Dashboard + Archive |
 | v1.0 | Static GitHub Pages archive |
 
 ---
 
 ## Deployment Workflow
 
-GitHub Desktop → Pull origin → copy files into repo folder → Commit with version message → Push origin → GitHub Pages auto-deploys (~2 min)
-
-## Source Files for Segment Archive
-- `Truthsayer.txt` — full segment archive, newest first
-- `EH_Ep_Numbers_and_dates.csv` — authoritative episode numbers and air dates
-- Both TS numbers and episode numbers increase over time; lower = older
+1. GitHub Desktop → Pull origin
+2. Copy updated files into repo folder
+3. Commit with message: `v5.0 — [description]`
+4. Push origin → GitHub Pages auto-deploys (~2 min)
