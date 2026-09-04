@@ -1,4 +1,4 @@
-<!-- v5.0 -->
+<!-- v5.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1923,6 +1923,7 @@
             <option value="list">List</option>
             <option value="all-true">All true</option>
             <option value="non-standard">Non-standard</option>
+            <option value="multi-round">Multi-Round</option>
           </select>
         </div>
       </div>
@@ -2074,6 +2075,7 @@
             <option value="list">List</option>
             <option value="all-true">All true</option>
             <option value="non-standard">Non-standard</option>
+            <option value="multi-round">Multi-Round</option>
           </select>
         </div>
       </div>
@@ -2190,7 +2192,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '5.0';
+const APP_VERSION = '5.1';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──
@@ -2839,7 +2841,21 @@ function openModal(id) {
   const entriesEl = document.getElementById('modal-entries');
   const isAdminUser = isAdmin();
 
-  if (isAdminUser) {
+  if (s.variant === 'multi-round' && s.rounds && s.rounds.length) {
+    // Multi-round segment: display each round as its own section
+    entriesEl.innerHTML = s.rounds.map((round, ri) => `
+      <div style="margin-bottom:1.25rem;padding:0.75rem;border:1px solid var(--border2);border-radius:6px">
+        <div style="font-weight:600;color:var(--gold);margin-bottom:0.25rem">${esc(round.title || 'Round ' + (ri+1))}</div>
+        ${round.questionText ? `<div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem">${esc(round.questionText)}</div>` : ''}
+        ${(round.options || []).map((o, oi) => `
+          <div class="modal-entry ${isAdminUser && o.isTrue ? 'true-entry' : ''}">
+            <span class="modal-entry-num">#${oi+1}</span>
+            <span class="modal-entry-text">${esc(o.text)}${isAdminUser && o.isTrue ? ' ✓' : ''}</span>
+          </div>`).join('')}
+        ${isAdminUser && round.revealText ? `<div style="margin-top:0.5rem;font-size:0.85rem;color:var(--muted)">${esc(round.revealText)}</div>` : ''}
+      </div>
+    `).join('');
+  } else if (isAdminUser) {
     // Admin sees full entries with answers marked
     entriesEl.innerHTML = (s.entries || []).map((e, i) => `
       <div class="modal-entry ${e.isTrue ? 'true-entry' : ''}">
@@ -2966,9 +2982,55 @@ function enterEditMode(s) {
   document.getElementById('edit-status').value = s.status || 'published';
   document.getElementById('edit-playable').checked = s.playable !== false;
 
-  renderEditEntries(s.entries || []);
+  if (s.variant === 'multi-round') {
+    renderEditRounds(s.rounds || []);
+  } else {
+    renderEditEntries(s.entries || []);
+  }
   renderAudioUploadUI(s);
   document.getElementById('modal-edit-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── MULTI-ROUND EDITOR ──
+function renderEditRounds(rounds) {
+  window._editRounds = rounds.map(r => ({
+    roundId: r.roundId || '',
+    title: r.title || '',
+    questionText: r.questionText || '',
+    options: (r.options || []).map(o => ({ ...o })),
+    revealText: r.revealText || '',
+  }));
+  const container = document.getElementById('edit-entries-container');
+  const render = () => {
+    container.innerHTML = window._editRounds.map((round, ri) => `
+      <div style="margin-bottom:1rem;padding:0.75rem;border:1px solid var(--border2);border-radius:6px">
+        <div style="font-weight:600;color:var(--gold);margin-bottom:0.5rem">Round ${ri+1}: ${esc(round.title)}</div>
+        <div style="margin-bottom:0.4rem">
+          <label style="font-size:0.8rem;color:var(--muted)">Round Title</label>
+          <input class="modal-edit-input" value="${esc(round.title)}" oninput="window._editRounds[${ri}].title=this.value">
+        </div>
+        <div style="margin-bottom:0.4rem">
+          <label style="font-size:0.8rem;color:var(--muted)">Question Text</label>
+          <input class="modal-edit-input" value="${esc(round.questionText)}" oninput="window._editRounds[${ri}].questionText=this.value">
+        </div>
+        <div style="margin-bottom:0.4rem">
+          <label style="font-size:0.8rem;color:var(--muted)">Options</label>
+          ${round.options.map((opt, oi) => `
+            <div style="display:flex;gap:0.5rem;align-items:flex-start;margin-bottom:0.3rem">
+              <input type="radio" name="round-true-${ri}" ${opt.isTrue ? 'checked' : ''} style="margin-top:0.55rem;flex-shrink:0"
+                onchange="window._editRounds[${ri}].options.forEach((o,i)=>o.isTrue=(i===${oi}))">
+              <textarea class="modal-edit-input" rows="2" style="min-height:0;font-family:var(--font-body)"
+                oninput="window._editRounds[${ri}].options[${oi}].text=this.value">${esc(opt.text)}</textarea>
+            </div>`).join('')}
+        </div>
+        <div>
+          <label style="font-size:0.8rem;color:var(--muted)">Reveal Text</label>
+          <textarea class="modal-edit-input" rows="3" style="font-family:var(--font-body)"
+            oninput="window._editRounds[${ri}].revealText=this.value">${esc(round.revealText || '')}</textarea>
+        </div>
+      </div>`).join('');
+  };
+  render();
 }
 
 function renderEditEntries(entryList) {
@@ -3039,19 +3101,21 @@ async function saveEdit() {
     : tsNum ? `ts-${tsNum}-${filmSlug}` : null;
 
   try {
+    const variant = document.getElementById('edit-variant').value;
     const setupText = (document.getElementById('edit-setup')?.value || '').trim();
     const revealText = (document.getElementById('edit-reveal')?.value || '').trim();
-    const optionsText = (window._editEntries || []).map((e, i) => `#${i+1} — ${e.text}`).join('\n');
-    const fullText = [setupText, optionsText, revealText].filter(Boolean).join('\n\n');
+    const isMultiRound = variant === 'multi-round';
+    const optionsText = isMultiRound ? '' : (window._editEntries || []).map((e, i) => `#${i+1} — ${e.text}`).join('\n');
+    const fullText = isMultiRound ? setupText : [setupText, optionsText, revealText].filter(Boolean).join('\n\n');
     const ref = window._doc(window._db, 'segments', window._editingId);
-    await window._setDoc(ref, {
+    const payload = {
       tsNumber: tsNum,
       episodeNumber: epNum,
       airDate: document.getElementById('edit-air-date').value || null,
       film,
       topic: document.getElementById('edit-topic').value.trim(),
-      variant: document.getElementById('edit-variant').value,
-      entries: window._editEntries,
+      variant,
+      entries: isMultiRound ? [] : window._editEntries,
       setupText,
       revealText,
       optionsText,
@@ -3060,7 +3124,9 @@ async function saveEdit() {
       playable: document.getElementById('edit-playable').checked,
       segmentId,
       updatedAt: window._serverTimestamp()
-    }, { merge: true });
+    };
+    if (isMultiRound && window._editRounds) payload.rounds = window._editRounds;
+    await window._setDoc(ref, payload, { merge: true });
 
     toast('Saved ✓');
     cancelEdit();
@@ -3188,6 +3254,21 @@ async function uploadAudio(event, type) {
   }
 }
 
+async function removeAudio(type) {
+  const id = window._editingId;
+  if (!id) { toast('No segment selected'); return; }
+  const field = type === 'question' ? 'questionAudioUrl' : type === 'reveal' ? 'revealAudioUrl' : 'specialAudioUrl';
+  if (!confirm(`Remove ${field}? This only clears the URL in Firestore — the file in Storage is not deleted.`)) return;
+  try {
+    const docRef = window._doc(window._db, 'segments', id);
+    await window._setDoc(docRef, { [field]: null }, { merge: true });
+    const seg = (window._allSegments || []).find(s => s.id === id);
+    if (seg) { seg[field] = null; window._editingSegment = seg; }
+    toast('Audio removed ✓');
+    renderAudioUploadUI(window._editingSegment || {});
+  } catch(e) { toast('Remove failed: ' + e.message); }
+}
+
 function renderAudioUploadUI(s) {
   const container = document.getElementById('audio-upload-section');
   if (!container) return;
@@ -3206,6 +3287,7 @@ function renderAudioUploadUI(s) {
           <button class="btn btn-secondary btn-sm" onclick="document.getElementById('${inputId}').click()">
             ${existingUrl ? 'Replace audio' : 'Upload audio'}
           </button>
+          ${existingUrl ? `<button class="btn btn-danger btn-sm" onclick="removeAudio('${type}')">Remove</button>` : ''}
           <span class="audio-upload-status" id="audio-upload-status-${type}"></span>
         </div>
       </div>`;
