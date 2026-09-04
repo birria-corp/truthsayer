@@ -144,6 +144,7 @@
 | `cleanup-old-docs.js` | Remove pre-batch duplicate Firestore docs |
 | `fix-ep231.js` | One-off fix for Constantine entries + revealText |
 | `lookup-ep231.js` | Diagnostic: find doc by episodeNumber |
+| `fix-remaining-audio.js` | Upload Q/A audio for ep-294 (Point Blank) and ep-223 (Star Trek TMP); idempotent |
 
 **Critical:** `batch-update-firestore.js` uses segmentId as the Firestore doc ID key — this creates new docs if a segment's existing doc has an auto-generated ID. Always run `cleanup-old-docs.js` after a batch update to remove the old duplicates.
 
@@ -151,9 +152,7 @@
 
 ## Open Items
 
-- ep-269 Sorcerer reveal audio — upload manually via admin Segment Builder
-- Point Break Q/A (Drive IDs known) — confirm episode number
-- Trek Q ambiguous (Drive `1HIDGh2NtjngYyJ_MDmbZvLtsWkaqnU0t`) — confirm episode
+None — audio migration complete as of 2026-09-04.
 
 ---
 
