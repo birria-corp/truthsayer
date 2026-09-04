@@ -1,4 +1,4 @@
-<!-- v4.7 -->
+<!-- v4.9 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1116,6 +1116,17 @@
     .library-quote-box { border-left: none; border-right: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1rem 0; }
     .library-count-box { padding-left: 0; padding-top: 1rem; }
     .library-logo { width: 120px; height: 120px; }
+
+    /* Card two-row layout on narrow screens */
+    .card-row { flex-wrap: wrap; gap: 0.3rem 0.5rem; }
+    .card-left { min-width: 4.5rem; }
+    .card-middle {
+      min-width: calc(100% - 5.5rem);
+      flex: 1 1 0;
+    }
+    .card-actions { order: 3; }
+    .card-meta { order: 4; margin-left: auto; }
+    .card-topic-inline { display: none; }
   }
 
 
@@ -2179,7 +2190,7 @@ window._loadSegments = async function() {
 </script>
 
 <script>
-const APP_VERSION = '4.8';
+const APP_VERSION = '4.9';
   const ADMIN_UIDS = ['ZbRaWy2Ld5MPG0AtzyElphKWUiZ2'];
 
 // ── AUTH ──

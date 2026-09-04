@@ -85,6 +85,7 @@ GitHub Desktop → Pull origin → copy updated files → Commit → Push origin
 
 | Version | Changes |
 |---------|---------|
+| v4.9 | Mobile card fix — two-row layout on narrow screens (title no longer squeezed); topic hidden on mobile |
 | v4.8 | Sticky tab row; Game button (replaces Play, no arrow); blue 🔊 speaker button on cards with audio; specialAudioUrl field support (modal, edit UI, upload, game card) |
 | v4.7 | Library cards redesigned as single compact row — title · topic inline, Play/View/date/status all in one horizontal strip |
 | v4.6 | EP/TS numbers left-justified on library cards; Exit Preview button in game view; ▶ Play + View buttons on each card (published + audio-only); Play button gates on published status + valid entries |
